@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const MODEL = "gemini-2.5-flash"
+const MODEL = "gemini-3.6-flash"
 
 export async function POST(request: Request) {
   try {
@@ -56,23 +56,48 @@ Return ONLY valid JSON with this exact shape:
   ]
 }`
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.9,
-            responseMimeType: "application/json",
-          },
-        }),
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
-    )
+      body: JSON.stringify({
+        model: MODEL,
+        input: prompt,
+        store: false,
+        generation_config: {
+          max_output_tokens: 5000,
+        },
+        response_format: {
+          type: "text",
+          mime_type: "application/json",
+          schema: {
+            type: "object",
+            properties: {
+              concepts: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    name: { type: "string" },
+                    strategy: { type: "string" },
+                    hook: { type: "string" },
+                    script: { type: "string" },
+                    cta: { type: "string" },
+                    viralScore: { type: "integer" },
+                    style: { type: "string" },
+                  },
+                  required: ["id", "name", "strategy", "hook", "script", "cta", "viralScore", "style"],
+                },
+              },
+            },
+            required: ["concepts"],
+          },
+        },
+      }),
+    })
 
     const data = await response.json()
     if (!response.ok) {
@@ -80,7 +105,13 @@ Return ONLY valid JSON with this exact shape:
       return NextResponse.json({ error: message }, { status: response.status })
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+    const text = data?.steps
+      ?.filter((step: any) => step?.type === "model_output")
+      ?.flatMap((step: any) => Array.isArray(step?.content) ? step.content : [])
+      ?.filter((content: any) => content?.type === "text")
+      ?.map((content: any) => content.text)
+      ?.join("\n")
+
     if (!text) {
       return NextResponse.json({ error: "Gemini returned an empty response." }, { status: 502 })
     }
