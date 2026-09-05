@@ -3,7 +3,7 @@ name: Install ViralForge project
 on:
   push:
     paths:
-      - "viralforge-ai-gemini.zip"
+      - "viralforge-ai-magichour.zip"
 
 permissions:
   contents: write
@@ -17,22 +17,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract project
-        run: |
-          mkdir /tmp/viralforge
-          unzip -q viralforge-ai-gemini.zip -d /tmp/viralforge
-
+        run: | mkdir /tmp/viralforge unzip -q viralforge-ai-magichour.zip -d /tmp/viralforge 
           find . -mindepth 1 -maxdepth 1 \
             ! -name ".git" \
             ! -name ".github" \
             -exec rm -rf {} +
 
           cp -a /tmp/viralforge/. .
-          rm -f viralforge-ai-gemini.zip
+          rm -f viralforge-ai-magichour.zip
 
       - name: Commit project
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -m "Install ViralForge AI project"
-          git push
+        run: | git config user.name "github-actions[bot]" git config user.email "41898282+github-actions[bot]@users.noreply.github.com" git add -A git diff --cached --quiet || git commit -m "Install ViralForge AI project" git push
