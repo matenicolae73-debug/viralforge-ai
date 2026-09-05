@@ -19,17 +19,38 @@ jobs:
 
       - name: Extract project
         run: |
+          set -e
+
           mkdir -p /tmp/viralforge
           unzip -q viralforge-ai-magichour.zip -d /tmp/viralforge
 
+          # Șterge proiectul vechi, păstrând GitHub și ZIP-ul
           find . -mindepth 1 -maxdepth 1 \
             ! -name ".git" \
             ! -name ".github" \
             ! -name "viralforge-ai-magichour.zip" \
             -exec rm -rf {} +
 
+          # Copiază conținutul extras
           cp -a /tmp/viralforge/. .
+
+          # Dacă ZIP-ul are un singur folder în interior,
+          # mută conținutul lui la rădăcina proiectului
+          if [ -d "./viralforge-ai" ] && [ -f "./viralforge-ai/package.json" ]; then
+            cp -a ./viralforge-ai/. .
+            rm -rf ./viralforge-ai
+          fi
+
           rm -f viralforge-ai-magichour.zip
+
+      - name: Check project
+        run: |
+          echo "Project files:"
+          ls -la
+          echo ""
+          echo "Checking package.json..."
+          test -f package.json
+          echo "package.json OK"
 
       - name: Commit project
         run: |
@@ -37,4 +58,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet || git commit -m "Install ViralForge AI project"
-          git push
+          git pushed
