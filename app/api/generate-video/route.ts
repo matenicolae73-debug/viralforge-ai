@@ -16,12 +16,17 @@ export async function POST(request: Request) {
     const body = await request.json()
 
     const prompt = String(body.prompt ?? "").trim()
-    const orientation = String(body.orientation ?? "portrait")
     const aspectRatio = String(body.aspectRatio ?? "9:16")
-    const duration = Math.max(
-      4,
-      Math.min(8, Number(body.duration) || 5)
-    )
+
+    // LTX-2.5 supports 20 and 25 seconds.
+    // Default to 25 seconds for ViralForge advertisements.
+    const requestedDuration = Number(body.duration) || 25
+
+    const supportedDurations = [20, 25]
+
+    const duration = supportedDurations.includes(requestedDuration)
+      ? requestedDuration
+      : 25
 
     if (!prompt) {
       return NextResponse.json(
@@ -29,6 +34,13 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    const safeAspectRatio =
+      aspectRatio === "16:9"
+        ? "16:9"
+        : aspectRatio === "1:1"
+          ? "1:1"
+          : "9:16"
 
     const response = await fetch(`${API_BASE}/text-to-video`, {
       method: "POST",
@@ -39,14 +51,9 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         name: "ViralForge AI Ad",
+        model: "ltx-2.5",
         end_seconds: duration,
-        orientation:
-          orientation === "landscape"
-            ? "landscape"
-            : orientation === "square"
-              ? "square"
-              : "portrait",
-        aspect_ratio: aspectRatio,
+        aspect_ratio: safeAspectRatio,
         resolution: "480p",
         style: {
           prompt,
@@ -62,6 +69,8 @@ export async function POST(request: Request) {
         data?.error?.message ||
         "Magic Hour video generation failed."
 
+      console.error("Magic Hour error:", data)
+
       return NextResponse.json(
         { error: message },
         { status: response.status }
@@ -71,6 +80,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       projectId: data?.id,
       creditsCharged: data?.credits_charged,
+      duration,
+      model: "ltx-2.5",
     })
   } catch (error) {
     console.error("generate-video error", error)
