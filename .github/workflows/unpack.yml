@@ -1,10 +1,12 @@
 name: Install ViralForge project
 
 on:
+  workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - "viralforge-ai-magichour.zip"
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,43 +16,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Check ZIP
+        run: |
+          ls -la
+          test -f viralforge-ai-magichour.zip
 
       - name: Extract project
         run: |
-          set -e
-
           mkdir -p /tmp/viralforge
           unzip -q viralforge-ai-magichour.zip -d /tmp/viralforge
 
-          # Șterge proiectul vechi, păstrând GitHub și ZIP-ul
-          find . -mindepth 1 -maxdepth 1 \
-            ! -name ".git" \
-            ! -name ".github" \
-            ! -name "viralforge-ai-magichour.zip" \
-            -exec rm -rf {} +
+          find /tmp/viralforge -mindepth 1 -maxdepth 1 -type d -print
 
-          # Copiază conținutul extras
+          rm -rf app components lib public
+          rm -f package.json next.config.mjs tsconfig.json postcss.config.mjs components.json pnpm-lock.yaml pnpm-workspace.yaml
+
           cp -a /tmp/viralforge/. .
-
-          # Dacă ZIP-ul are un singur folder în interior,
-          # mută conținutul lui la rădăcina proiectului
-          if [ -d "./viralforge-ai" ] && [ -f "./viralforge-ai/package.json" ]; then
-            cp -a ./viralforge-ai/. .
-            rm -rf ./viralforge-ai
-          fi
 
           rm -f viralforge-ai-magichour.zip
 
-      - name: Check project
+      - name: Show project files
         run: |
-          echo "Project files:"
+          echo "=== PROJECT ==="
           ls -la
-          echo ""
-          echo "Checking package.json..."
-          test -f package.json
-          echo "package.json OK"
+          echo "=== APP ==="
+          find app -maxdepth 2 -type f | sort | head -100
 
       - name: Commit project
         run: |
@@ -58,4 +51,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet || git commit -m "Install ViralForge AI project"
-          git pushed
+          git push
