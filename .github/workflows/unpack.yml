@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - "viralforge-ai-magichour.zip"
+      - "*.zip"
 
 permissions:
   contents: write
@@ -19,36 +19,70 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check ZIP
+      - name: Find ZIP
         run: |
-          ls -la
-          test -f viralforge-ai-magichour.zip
+          ZIP=$(find . -maxdepth 1 -type f -iname "*.zip" | head -n 1)
+
+          if [ -z "$ZIP" ]; then
+            echo "ERROR: No ZIP file found."
+            exit 1
+          fi
+
+          echo "Found ZIP: $ZIP"
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
 
       - name: Extract project
         run: |
+          rm -rf /tmp/viralforge
           mkdir -p /tmp/viralforge
-          unzip -q viralforge-ai-magichour.zip -d /tmp/viralforge
 
-          find /tmp/viralforge -mindepth 1 -maxdepth 1 -type d -print
+          unzip -q "$ZIP" -d /tmp/viralforge
 
-          rm -rf app components lib public
-          rm -f package.json next.config.mjs tsconfig.json postcss.config.mjs components.json pnpm-lock.yaml pnpm-workspace.yaml
+          echo "Extracted files:"
+          find /tmp/viralforge -maxdepth 3 -type f | head -100
 
-          cp -a /tmp/viralforge/. .
-
-          rm -f viralforge-ai-magichour.zip
-
-      - name: Show project files
+      - name: Install project at repository root
         run: |
-          echo "=== PROJECT ==="
+          PROJECT_DIR="/tmp/viralforge"
+
+          if [ -f "$PROJECT_DIR/package.json" ]; then
+            echo "Project is directly inside ZIP."
+          else
+            FOUND=$(find "$PROJECT_DIR" -mindepth 1 -maxdepth 2 -name package.json -print -quit)
+
+            if [ -z "$FOUND" ]; then
+              echo "ERROR: package.json not found."
+              exit 1
+            fi
+
+            PROJECT_DIR=$(dirname "$FOUND")
+            echo "Project directory: $PROJECT_DIR"
+          fi
+
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name ".git" \
+            ! -name ".github" \
+            -exec rm -rf {} +
+
+          cp -a "$PROJECT_DIR"/. .
+
+          echo "Final project:"
           ls -la
-          echo "=== APP ==="
-          find app -maxdepth 2 -type f | sort | head -100
+
+      - name: Remove ZIP files
+        run: |
+          rm -f ./*.zip
 
       - name: Commit project
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -A
-          git diff --cached --quiet || git commit -m "Install ViralForge AI project"
-          git push
+
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+          else
+            git commit -m "Install ViralForge AI project"
+            git push
+          fi
