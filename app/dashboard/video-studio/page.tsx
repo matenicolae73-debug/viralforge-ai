@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Play, Pause, Download, Captions, Music2, Mic, Sparkles } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
@@ -24,10 +24,65 @@ export default function VideoStudioPage() {
   const [playing, setPlaying] = useState(false)
   const [activeScene, setActiveScene] = useState(SAMPLE_SCENES[0].id)
   const [subtitles, setSubtitles] = useState(true)
+  const [generating, setGenerating] = useState(false)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [videoStatus, setVideoStatus] = useState<string | null>(null)
+  const [videoError, setVideoError] = useState<string | null>(null)
 
   const currentFormat = FORMATS.find((f) => f.id === format)!
   const isWide = currentFormat.ratio === "16:9"
   const isSquare = currentFormat.ratio === "1:1"
+
+  const generateVideo = async () => {
+    setGenerating(true)
+    setVideoError(null)
+    setVideoUrl(null)
+    setVideoStatus("Starting video generation…")
+
+    try {
+      const prompt = `Create a polished ${currentFormat.label} social media advertisement. ${
+        `Scene: ${SAMPLE_SCENES.map((s) => `${s.label}: ${s.description}`).join(". ")}. `
+      }Use dynamic camera movement, clear product focus, premium advertising cinematography, strong visual hook, realistic motion, and clean composition. Do not add fake logos or unsupported claims.`
+
+      const response = await fetch("/api/generate-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          orientation: isWide ? "landscape" : isSquare ? "square" : "portrait",
+          aspectRatio: currentFormat.ratio,
+          duration: 5,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data.projectId) throw new Error(data.error || "Video generation could not be started.")
+
+      setVideoStatus("Rendering video…")
+      for (let attempt = 0; attempt < 30; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 5000))
+        const statusResponse = await fetch(`/api/video-status?id=${encodeURIComponent(data.projectId)}`, { cache: "no-store" })
+        const statusData = await statusResponse.json()
+        if (!statusResponse.ok) throw new Error(statusData.error || "Could not check video status.")
+
+        if (statusData.status === "complete" && statusData.videoUrl) {
+          setVideoUrl(statusData.videoUrl)
+          setVideoStatus("Video ready")
+          return
+        }
+        if (["error", "canceled"].includes(statusData.status)) {
+          throw new Error(statusData.error || `Video generation ${statusData.status}.`)
+        }
+      }
+
+      setVideoStatus("Still rendering — keep this page open and try again shortly.")
+    } catch (error) {
+      setVideoError(error instanceof Error ? error.message : "Video generation failed.")
+      setVideoStatus(null)
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -60,13 +115,22 @@ export default function VideoStudioPage() {
                         "radial-gradient(circle at 30% 30%, oklch(0.7 0.19 47 / 0.4), transparent 55%), radial-gradient(circle at 75% 70%, oklch(0.82 0.15 78 / 0.25), transparent 55%)",
                     }}
                   />
-                  <button
-                    onClick={() => setPlaying((v) => !v)}
-                    className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105"
-                    aria-label={playing ? "Pause preview" : "Play preview"}
-                  >
-                    {playing ? <Pause className="h-7 w-7" /> : <Play className="ml-1 h-7 w-7" />}
-                  </button>
+                  {videoUrl ? (
+                    <video
+                      className="absolute inset-0 h-full w-full object-cover"
+                      src={videoUrl}
+                      controls
+                      playsInline
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setPlaying((v) => !v)}
+                      className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105"
+                      aria-label={playing ? "Pause preview" : "Play preview"}
+                    >
+                      {playing ? <Pause className="h-7 w-7" /> : <Play className="ml-1 h-7 w-7" />}
+                    </button>
+                  )}
                   {subtitles && (
                     <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 rounded bg-background/80 px-3 py-1 text-center text-xs font-medium backdrop-blur-sm">
                       {"I did NOT expect this to work in 3 seconds..."}
@@ -79,6 +143,13 @@ export default function VideoStudioPage() {
               </div>
             </CardContent>
           </Card>
+
+          {videoStatus && (
+            <div className="rounded-lg border border-border bg-secondary/40 px-4 py-3 text-sm text-muted-foreground">{videoStatus}</div>
+          )}
+          {videoError && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">{videoError}</div>
+          )}
 
           {/* Scene timeline */}
           <Card>
@@ -217,7 +288,12 @@ export default function VideoStudioPage() {
             </CardContent>
           </Card>
 
-          <Button size="lg" className="w-full forge-glow">
+          <Button size="lg" className="w-full forge-glow" onClick={generateVideo} disabled={generating}>
+            <Sparkles className="h-4 w-4" />
+            {generating ? "Generating video…" : "Generate AI video"}
+          </Button>
+
+          <Button size="lg" variant="outline" className="w-full" disabled={!videoUrl}>
             <Download className="h-4 w-4" />
             Export {currentFormat.label}
           </Button>
