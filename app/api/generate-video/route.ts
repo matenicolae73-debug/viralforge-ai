@@ -18,15 +18,14 @@ export async function POST(request: Request) {
     const prompt = String(body.prompt ?? "").trim()
     const aspectRatio = String(body.aspectRatio ?? "9:16")
 
-    // LTX-2.5 supports 20 and 25 seconds.
-    // Default to 25 seconds for ViralForge advertisements.
-    const requestedDuration = Number(body.duration) || 25
+    // ViralForge currently uses 10-second videos.
+    const requestedDuration = Number(body.duration) || 10
 
-    const supportedDurations = [20, 25]
+    const supportedDurations = [10]
 
     const duration = supportedDurations.includes(requestedDuration)
       ? requestedDuration
-      : 25
+      : 10
 
     if (!prompt) {
       return NextResponse.json(
