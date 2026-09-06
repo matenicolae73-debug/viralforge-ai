@@ -44,14 +44,39 @@ export default function CreateCampaignPage() {
     setStatus("generating")
 
     try {
-      const response = await fetch("/api/generate-campaign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productName, description, country, audience, goal, style }),
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data?.error || "Generation failed.")
-      setConcepts(data.concepts)
+      // Free local generation: the browser creates the campaign concepts itself.
+      // No external API, API key, server request, or paid credits are required.
+      const product = productName.trim()
+      const desc = description.trim() || "A product designed to make everyday moments better."
+
+      const goalText: Record<string, string> = {
+        sales: "drive action and product interest",
+        awareness: "build memorable brand awareness",
+        "product-launch": "create excitement around the product launch",
+        "social-media": "maximize social engagement and sharing",
+      }
+      const styleText: Record<string, string> = {
+        viral: "fast-paced, highly shareable and scroll-stopping",
+        emotional: "warm, emotional and relatable",
+        luxury: "premium, elegant and aspirational",
+        funny: "light, playful and humorous",
+        cinematic: "visual, dramatic and cinematic",
+      }
+
+      const objective = goalText[goal] || goalText.sales
+      const creativeStyle = styleText[style] || styleText.viral
+
+      const generated = [
+        { id: `local-1-${Date.now()}`, name: "The Scroll Stopper", strategy: `A ${creativeStyle} opening built to ${objective}.`, hook: `\"Wait... have you tried ${product}? 👀\"`, script: `Open with a striking close-up of ${product}. Quickly show the product in use and communicate: ${desc}. Finish with a clean hero shot and a strong CTA.`, cta: "Discover the moment. ✨", viralScore: 94, style: style },
+        { id: `local-2-${Date.now()}`, name: "One Moment, One Product", strategy: `A relatable concept for ${audience} in ${country}.`, hook: `\"That little moment that just got better. ❤️\"`, script: `Start with an everyday situation. Introduce ${product} naturally, show ${desc}, then end with a satisfying reaction and product shot.`, cta: "Share the moment. ❤️", viralScore: 91, style: style },
+        { id: `local-3-${Date.now()}`, name: "3 Seconds to Discover", strategy: `A fast three-beat reveal designed for short-form social video.`, hook: `\"3 seconds. 1 reason to remember ${product}.\"`, script: `Beat one: reveal ${product}. Beat two: show the key message — ${desc}. Beat three: reveal the final product shot and CTA.`, cta: "See why it stands out. 🚀", viralScore: 93, style: style },
+        { id: `local-4-${Date.now()}`, name: "Pass It On", strategy: `A social-first idea designed to encourage reactions, shares and tags.`, hook: `\"Send this to someone who needs ${product}. 👇\"`, script: `Show someone discovering ${product}, followed by a quick demonstration and genuine reaction. End with a shareable product moment and CTA.`, cta: "Tag someone who would love it. 👇", viralScore: 95, style: style },
+        { id: `local-5-${Date.now()}`, name: "The Brand Moment", strategy: `A polished hero-style ad built to ${objective}.`, hook: `${product}. One product. One unforgettable moment. ✨`, script: `Use dynamic movement, bold captions and a clean hero shot of ${product}. Highlight: ${desc}. Finish with a confident brand moment and CTA.`, cta: "Make your moment memorable. ✨", viralScore: 89, style: style },
+      ]
+
+      // Small delay keeps the UI animation natural while everything remains local.
+      await new Promise((resolve) => window.setTimeout(resolve, 350))
+      setConcepts(generated)
       setStatus("done")
       window.setTimeout(() => {
         document.getElementById("concepts")?.scrollIntoView({ behavior: "smooth", block: "start" })
