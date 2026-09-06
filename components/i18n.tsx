@@ -1,145 +1,139 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
+import Script from "next/script"
 
 export const LANGUAGES = [
-  ["English", "English"], ["Romanian", "Română"], ["Italian", "Italiano"], ["Spanish", "Español"], ["German", "Deutsch"],
-  ["French", "Français"], ["Portuguese", "Português"], ["Dutch", "Nederlands"], ["Polish", "Polski"], ["Czech", "Čeština"],
-  ["Slovak", "Slovenčina"], ["Hungarian", "Magyar"], ["Greek", "Ελληνικά"], ["Turkish", "Türkçe"], ["Arabic", "العربية"],
-  ["Hebrew", "עברית"], ["Hindi", "हिन्दी"], ["Bengali", "বাংলা"], ["Urdu", "اردو"], ["Persian", "فارسی"],
-  ["Chinese Simplified", "简体中文"], ["Chinese Traditional", "繁體中文"], ["Japanese", "日本語"], ["Korean", "한국어"], ["Vietnamese", "Tiếng Việt"],
-  ["Thai", "ไทย"], ["Indonesian", "Bahasa Indonesia"], ["Malay", "Bahasa Melayu"], ["Filipino", "Filipino"], ["Swedish", "Svenska"],
-  ["Norwegian", "Norsk"], ["Danish", "Dansk"], ["Finnish", "Suomi"], ["Ukrainian", "Українська"], ["Bulgarian", "Български"],
-  ["Croatian", "Hrvatski"], ["Serbian", "Српски"], ["Slovenian", "Slovenščina"],
+  ["English", "English", "en"], ["Romanian", "Română", "ro"], ["Italian", "Italiano", "it"], ["Spanish", "Español", "es"], ["German", "Deutsch", "de"],
+  ["French", "Français", "fr"], ["Portuguese", "Português", "pt"], ["Dutch", "Nederlands", "nl"], ["Polish", "Polski", "pl"], ["Czech", "Čeština", "cs"],
+  ["Slovak", "Slovenčina", "sk"], ["Hungarian", "Magyar", "hu"], ["Greek", "Ελληνικά", "el"], ["Turkish", "Türkçe", "tr"], ["Arabic", "العربية", "ar"],
+  ["Hebrew", "עברית", "he"], ["Hindi", "हिन्दी", "hi"], ["Bengali", "বাংলা", "bn"], ["Urdu", "اردو", "ur"], ["Persian", "فارسی", "fa"],
+  ["Chinese Simplified", "简体中文", "zh-CN"], ["Chinese Traditional", "繁體中文", "zh-TW"], ["Japanese", "日本語", "ja"], ["Korean", "한국어", "ko"], ["Vietnamese", "Tiếng Việt", "vi"],
+  ["Thai", "ไทย", "th"], ["Indonesian", "Bahasa Indonesia", "id"], ["Malay", "Bahasa Melayu", "ms"], ["Filipino", "Filipino", "tl"], ["Swedish", "Svenska", "sv"],
+  ["Norwegian", "Norsk", "no"], ["Danish", "Dansk", "da"], ["Finnish", "Suomi", "fi"], ["Ukrainian", "Українська", "uk"], ["Bulgarian", "Български", "bg"],
+  ["Croatian", "Hrvatski", "hr"], ["Serbian", "Српски", "sr"], ["Slovenian", "Slovenščina", "sl"],
 ] as const
 
-const T: Record<string, Record<string, string>> = {
-  English: {"Language":"Language"},
-  Romanian: {
-    "Sign in":"Conectare","Create Campaign":"Creează campanie","Dashboard":"Panou de control","Create Campaign":"Creează campanie","Brand Studio":"Studio de brand","Campaigns":"Campanii","Video Studio":"Studio video","Viral Intelligence":"Inteligență virală","AI advertising video platform":"Platformă AI pentru reclame video","Explore the dashboard":"Explorează panoul","Everything you need to forge scroll-stopping ads":"Tot ce ai nevoie pentru reclame care opresc scroll-ul","Recent campaigns":"Campanii recente","View all":"Vezi toate","Full report":"Raport complet","New Campaign":"Campanie nouă","Active campaigns":"Campanii active","Concepts generated":"Concepte generate","Videos exported":"Videoclipuri exportate","Manage brands":"Gestionează brandurile","Score content":"Evaluează conținutul","Generate 5 concepts":"Generează 5 concepte","Edit & export":"Editează și exportă","Overall potential":"Potențial general","Ready":"Gata","Published":"Publicat","Draft":"Ciornă","In Review":"În analiză","All":"Toate","Search campaigns":"Caută campanii","No campaigns found":"Nu au fost găsite campanii","Campaign options":"Opțiuni campanie","Viral score":"Scor viral","Video hook":"Hook video","Marketing strategy":"Strategie de marketing","Call to action":"Îndemn la acțiune","Save script":"Salvează scenariul","Edit":"Editează","Selected":"Selectat","Use this concept":"Folosește acest concept","Video Studio":"Studio video","Pause preview":"Pauză previzualizare","Play preview":"Redă previzualizarea","Scene timeline":"Cronologia scenelor","Scene":"Scenă","Format":"Format","Audio & captions":"Audio și subtitrări","Music volume":"Volum muzică","Create free video":"Creează videoclip gratuit","Brand name":"Numele brandului","Brand colors":"Culorile brandului","Live preview":"Previzualizare live","Add a product":"Adaugă un produs","Add product":"Adaugă produs","Enter":"Introdu","Hook Score":"Scor hook","Emotion Score":"Scor emoție","Attention Score":"Scor atenție","Share Potential":"Potențial de distribuire","Viral Intelligence":"Inteligență virală","Ready to apply these insights?":"Gata să aplici aceste informații?","Turn products into stories people want to watch.":"Transformă produsele în povești pe care oamenii vor să le urmărească.","Create advertising video campaigns with AI":"Creează campanii video publicitare cu AI",
-  },
-  Italian: {"Sign in":"Accedi","Create Campaign":"Crea campagna","Dashboard":"Dashboard","Brand Studio":"Studio del brand","Campaigns":"Campagne","Video Studio":"Studio video","Viral Intelligence":"Intelligence virale","AI advertising video platform":"Piattaforma AI per video pubblicitari","Explore the dashboard":"Esplora la dashboard","Recent campaigns":"Campagne recenti","View all":"Vedi tutto","Full report":"Rapporto completo","New Campaign":"Nuova campagna","Active campaigns":"Campagne attive","Concepts generated":"Concept generati","Videos exported":"Video esportati","Manage brands":"Gestisci brand","Score content":"Valuta contenuti","Generate 5 concepts":"Genera 5 concept","Edit & export":"Modifica ed esporta","Overall potential":"Potenziale complessivo","Ready":"Pronto","Published":"Pubblicato","Draft":"Bozza","In Review":"In revisione","All":"Tutte","Search campaigns":"Cerca campagne","No campaigns found":"Nessuna campagna trovata","Viral score":"Punteggio virale","Marketing strategy":"Strategia marketing","Call to action":"Call to action","Save script":"Salva script","Edit":"Modifica","Selected":"Selezionato","Use this concept":"Usa questo concept","Pause preview":"Metti in pausa anteprima","Play preview":"Riproduci anteprima","Scene timeline":"Timeline scene","Scene":"Scena","Format":"Formato","Audio & captions":"Audio e sottotitoli","Music volume":"Volume musica","Create free video":"Crea video gratis","Brand name":"Nome del brand","Brand colors":"Colori del brand","Live preview":"Anteprima live","Add a product":"Aggiungi prodotto","Add product":"Aggiungi prodotto","Enter":"Invio","Hook Score":"Punteggio hook","Emotion Score":"Punteggio emozione","Attention Score":"Punteggio attenzione","Share Potential":"Potenziale condivisione","Ready to apply these insights?":"Pronto ad applicare questi insight?"},
-  Spanish: {"Sign in":"Iniciar sesión","Create Campaign":"Crear campaña","Dashboard":"Panel","Brand Studio":"Estudio de marca","Campaigns":"Campañas","Video Studio":"Estudio de vídeo","Viral Intelligence":"Inteligencia viral","AI advertising video platform":"Plataforma de vídeo publicitario con IA","Explore the dashboard":"Explorar el panel","Recent campaigns":"Campañas recientes","View all":"Ver todo","Full report":"Informe completo","New Campaign":"Nueva campaña","Active campaigns":"Campañas activas","Concepts generated":"Conceptos generados","Videos exported":"Vídeos exportados","Manage brands":"Gestionar marcas","Score content":"Puntuar contenido","Generate 5 concepts":"Generar 5 conceptos","Edit & export":"Editar y exportar","Overall potential":"Potencial general","Ready":"Listo","Published":"Publicado","Draft":"Borrador","In Review":"En revisión","All":"Todas","Search campaigns":"Buscar campañas","No campaigns found":"No se encontraron campañas","Viral score":"Puntuación viral","Marketing strategy":"Estrategia de marketing","Call to action":"Llamada a la acción","Save script":"Guardar guion","Edit":"Editar","Selected":"Seleccionado","Use this concept":"Usar este concepto","Pause preview":"Pausar vista previa","Play preview":"Reproducir vista previa","Scene timeline":"Línea de tiempo de escenas","Scene":"Escena","Format":"Formato","Audio & captions":"Audio y subtítulos","Music volume":"Volumen de música","Create free video":"Crear vídeo gratis","Brand name":"Nombre de marca","Brand colors":"Colores de marca","Live preview":"Vista previa en vivo","Add a product":"Añadir producto","Add product":"Añadir producto","Enter":"Intro","Hook Score":"Puntuación del hook","Emotion Score":"Puntuación emocional","Attention Score":"Puntuación de atención","Share Potential":"Potencial de compartición","Ready to apply these insights?":"¿Listo para aplicar estos insights?"},
-  German: {"Sign in":"Anmelden","Create Campaign":"Kampagne erstellen","Dashboard":"Dashboard","Brand Studio":"Markenstudio","Campaigns":"Kampagnen","Video Studio":"Videostudio","Viral Intelligence":"Virale Intelligenz","AI advertising video platform":"KI-Plattform für Werbevideos","Explore the dashboard":"Dashboard öffnen","Recent campaigns":"Letzte Kampagnen","View all":"Alle anzeigen","Full report":"Vollständiger Bericht","New Campaign":"Neue Kampagne","Active campaigns":"Aktive Kampagnen","Concepts generated":"Generierte Konzepte","Videos exported":"Exportierte Videos","Manage brands":"Marken verwalten","Score content":"Inhalte bewerten","Generate 5 concepts":"5 Konzepte erstellen","Edit & export":"Bearbeiten & exportieren","Overall potential":"Gesamtpotenzial","Ready":"Bereit","Published":"Veröffentlicht","Draft":"Entwurf","In Review":"In Prüfung","All":"Alle","Search campaigns":"Kampagnen suchen","No campaigns found":"Keine Kampagnen gefunden","Viral score":"Viraler Score","Marketing strategy":"Marketingstrategie","Call to action":"Call-to-Action","Save script":"Skript speichern","Edit":"Bearbeiten","Selected":"Ausgewählt","Use this concept":"Dieses Konzept verwenden","Pause preview":"Vorschau pausieren","Play preview":"Vorschau abspielen","Scene timeline":"Szenen-Timeline","Scene":"Szene","Format":"Format","Audio & captions":"Audio & Untertitel","Music volume":"Musiklautstärke","Create free video":"Kostenloses Video erstellen","Brand name":"Markenname","Brand colors":"Markenfarben","Live preview":"Live-Vorschau","Add a product":"Produkt hinzufügen","Add product":"Produkt hinzufügen","Enter":"Eingabe","Hook Score":"Hook-Score","Emotion Score":"Emotions-Score","Attention Score":"Aufmerksamkeits-Score","Share Potential":"Teilungspotenzial","Ready to apply these insights?":"Bereit, diese Erkenntnisse anzuwenden?"},
-  French: {"Sign in":"Se connecter","Create Campaign":"Créer une campagne","Dashboard":"Tableau de bord","Brand Studio":"Studio de marque","Campaigns":"Campagnes","Video Studio":"Studio vidéo","Viral Intelligence":"Intelligence virale","AI advertising video platform":"Plateforme vidéo publicitaire IA","Explore the dashboard":"Explorer le tableau de bord","Recent campaigns":"Campagnes récentes","View all":"Tout voir","Full report":"Rapport complet","New Campaign":"Nouvelle campagne","Active campaigns":"Campagnes actives","Concepts generated":"Concepts générés","Videos exported":"Vidéos exportées","Manage brands":"Gérer les marques","Score content":"Évaluer le contenu","Generate 5 concepts":"Générer 5 concepts","Edit & export":"Modifier et exporter","Overall potential":"Potentiel global","Ready":"Prêt","Published":"Publié","Draft":"Brouillon","In Review":"En révision","All":"Toutes","Search campaigns":"Rechercher des campagnes","No campaigns found":"Aucune campagne trouvée","Viral score":"Score viral","Marketing strategy":"Stratégie marketing","Call to action":"Appel à l'action","Save script":"Enregistrer le script","Edit":"Modifier","Selected":"Sélectionné","Use this concept":"Utiliser ce concept","Pause preview":"Mettre l'aperçu en pause","Play preview":"Lire l'aperçu","Scene timeline":"Chronologie des scènes","Scene":"Scène","Format":"Format","Audio & captions":"Audio et sous-titres","Music volume":"Volume de la musique","Create free video":"Créer une vidéo gratuite","Brand name":"Nom de marque","Brand colors":"Couleurs de marque","Live preview":"Aperçu en direct","Add a product":"Ajouter un produit","Add product":"Ajouter un produit","Enter":"Entrée","Hook Score":"Score du hook","Emotion Score":"Score émotionnel","Attention Score":"Score d’attention","Share Potential":"Potentiel de partage","Ready to apply these insights?":"Prêt à appliquer ces insights ?"},
-  Portuguese: {"Sign in":"Entrar","Create Campaign":"Criar campanha","Dashboard":"Painel","Brand Studio":"Estúdio da marca","Campaigns":"Campanhas","Video Studio":"Estúdio de vídeo","Viral Intelligence":"Inteligência viral","AI advertising video platform":"Plataforma de vídeos publicitários com IA","Explore the dashboard":"Explorar o painel","Recent campaigns":"Campanhas recentes","View all":"Ver tudo","Full report":"Relatório completo","New Campaign":"Nova campanha","Active campaigns":"Campanhas ativas","Concepts generated":"Conceitos gerados","Videos exported":"Vídeos exportados","Manage brands":"Gerenciar marcas","Score content":"Pontuar conteúdo","Generate 5 concepts":"Gerar 5 conceitos","Edit & export":"Editar e exportar","Overall potential":"Potencial geral","Ready":"Pronto","Published":"Publicado","Draft":"Rascunho","In Review":"Em análise","All":"Todas","Search campaigns":"Pesquisar campanhas","No campaigns found":"Nenhuma campanha encontrada","Viral score":"Pontuação viral","Marketing strategy":"Estratégia de marketing","Call to action":"Chamada para ação","Save script":"Salvar roteiro","Edit":"Editar","Selected":"Selecionado","Use this concept":"Usar este conceito","Pause preview":"Pausar pré-visualização","Play preview":"Reproduzir pré-visualização","Scene timeline":"Linha do tempo das cenas","Scene":"Cena","Format":"Formato","Audio & captions":"Áudio e legendas","Music volume":"Volume da música","Create free video":"Criar vídeo grátis","Brand name":"Nome da marca","Brand colors":"Cores da marca","Live preview":"Pré-visualização ao vivo","Add a product":"Adicionar produto","Add product":"Adicionar produto","Enter":"Enter","Hook Score":"Pontuação do hook","Emotion Score":"Pontuação emocional","Attention Score":"Pontuação de atenção","Share Potential":"Potencial de compartilhamento","Ready to apply these insights?":"Pronto para aplicar estes insights?"},
-  Dutch: {"Sign in":"Inloggen","Create Campaign":"Campagne maken","Dashboard":"Dashboard","Brand Studio":"Brandstudio","Campaigns":"Campagnes","Video Studio":"Videostudio","Viral Intelligence":"Virale intelligentie","AI advertising video platform":"AI-platform voor advertentievideo's","Explore the dashboard":"Dashboard bekijken","Recent campaigns":"Recente campagnes","View all":"Alles bekijken","Full report":"Volledig rapport","New Campaign":"Nieuwe campagne","Active campaigns":"Actieve campagnes","Concepts generated":"Gegenereerde concepten","Videos exported":"Geëxporteerde video's","Manage brands":"Merken beheren","Score content":"Content scoren","Generate 5 concepts":"5 concepten genereren","Edit & export":"Bewerken en exporteren","Overall potential":"Totaal potentieel","Ready":"Klaar","Published":"Gepubliceerd","Draft":"Concept","In Review":"In beoordeling","All":"Alle","Search campaigns":"Campagnes zoeken","No campaigns found":"Geen campagnes gevonden","Viral score":"Virale score","Marketing strategy":"Marketingstrategie","Call to action":"Call-to-action","Save script":"Script opslaan","Edit":"Bewerken","Selected":"Geselecteerd","Use this concept":"Dit concept gebruiken","Pause preview":"Voorbeeld pauzeren","Play preview":"Voorbeeld afspelen","Scene timeline":"Scènetijdlijn","Scene":"Scène","Format":"Formaat","Audio & captions":"Audio en ondertitels","Music volume":"Muziekvolume","Create free video":"Gratis video maken","Brand name":"Merknaam","Brand colors":"Merkkleuren","Live preview":"Live voorbeeld","Add a product":"Product toevoegen","Add product":"Product toevoegen","Enter":"Enter","Hook Score":"Hookscore","Emotion Score":"Emotiescore","Attention Score":"Aandachtsscore","Share Potential":"Deelpotentieel","Ready to apply these insights?":"Klaar om deze inzichten toe te passen?"},
-  Polish: {"Sign in":"Zaloguj się","Create Campaign":"Utwórz kampanię","Dashboard":"Panel","Brand Studio":"Studio marki","Campaigns":"Kampanie","Video Studio":"Studio wideo","Viral Intelligence":"Viral Intelligence","AI advertising video platform":"Platforma AI do reklam wideo","Explore the dashboard":"Otwórz panel","Recent campaigns":"Ostatnie kampanie","View all":"Zobacz wszystko","Full report":"Pełny raport","New Campaign":"Nowa kampania","Active campaigns":"Aktywne kampanie","Concepts generated":"Wygenerowane koncepcje","Videos exported":"Wyeksportowane filmy","Manage brands":"Zarządzaj markami","Score content":"Oceń treść","Generate 5 concepts":"Wygeneruj 5 koncepcji","Edit & export":"Edytuj i eksportuj","Overall potential":"Ogólny potencjał","Ready":"Gotowe","Published":"Opublikowano","Draft":"Wersja robocza","In Review":"W trakcie sprawdzania","All":"Wszystkie","Search campaigns":"Szukaj kampanii","No campaigns found":"Nie znaleziono kampanii","Viral score":"Wynik viralowy","Marketing strategy":"Strategia marketingowa","Call to action":"Wezwanie do działania","Save script":"Zapisz scenariusz","Edit":"Edytuj","Selected":"Wybrano","Use this concept":"Użyj tej koncepcji","Pause preview":"Wstrzymaj podgląd","Play preview":"Odtwórz podgląd","Scene timeline":"Oś czasu scen","Scene":"Scena","Format":"Format","Audio & captions":"Dźwięk i napisy","Music volume":"Głośność muzyki","Create free video":"Utwórz darmowy film","Brand name":"Nazwa marki","Brand colors":"Kolory marki","Live preview":"Podgląd na żywo","Add a product":"Dodaj produkt","Add product":"Dodaj produkt","Enter":"Enter","Hook Score":"Wynik hooka","Emotion Score":"Wynik emocji","Attention Score":"Wynik uwagi","Share Potential":"Potencjał udostępniania","Ready to apply these insights?":"Gotowy zastosować te wskazówki?"},
-  Turkish: {"Sign in":"Giriş yap","Create Campaign":"Kampanya oluştur","Dashboard":"Kontrol paneli","Brand Studio":"Marka Stüdyosu","Campaigns":"Kampanyalar","Video Studio":"Video Stüdyosu","Viral Intelligence":"Viral Zekâ","AI advertising video platform":"Yapay zekâ reklam video platformu","Explore the dashboard":"Paneli keşfet","Recent campaigns":"Son kampanyalar","View all":"Tümünü gör","Full report":"Tam rapor","New Campaign":"Yeni kampanya","Active campaigns":"Aktif kampanyalar","Concepts generated":"Oluşturulan konseptler","Videos exported":"Dışa aktarılan videolar","Manage brands":"Markaları yönet","Score content":"İçeriği puanla","Generate 5 concepts":"5 konsept oluştur","Edit & export":"Düzenle ve dışa aktar","Overall potential":"Genel potansiyel","Ready":"Hazır","Published":"Yayınlandı","Draft":"Taslak","In Review":"İncelemede","All":"Tümü","Search campaigns":"Kampanyalarda ara","No campaigns found":"Kampanya bulunamadı","Viral score":"Viral skoru","Marketing strategy":"Pazarlama stratejisi","Call to action":"Eylem çağrısı","Save script":"Senaryoyu kaydet","Edit":"Düzenle","Selected":"Seçildi","Use this concept":"Bu konsepti kullan","Pause preview":"Önizlemeyi duraklat","Play preview":"Önizlemeyi oynat","Scene timeline":"Sahne zaman çizelgesi","Scene":"Sahne","Format":"Format","Audio & captions":"Ses ve altyazılar","Music volume":"Müzik sesi","Create free video":"Ücretsiz video oluştur","Brand name":"Marka adı","Brand colors":"Marka renkleri","Live preview":"Canlı önizleme","Add a product":"Ürün ekle","Add product":"Ürün ekle","Enter":"Enter","Hook Score":"Hook skoru","Emotion Score":"Duygu skoru","Attention Score":"Dikkat skoru","Share Potential":"Paylaşım potansiyeli","Ready to apply these insights?":"Bu içgörüleri uygulamaya hazır mısın?"},
-  Arabic: {"Sign in":"تسجيل الدخول","Create Campaign":"إنشاء حملة","Dashboard":"لوحة التحكم","Brand Studio":"استوديو العلامة التجارية","Campaigns":"الحملات","Video Studio":"استوديو الفيديو","Viral Intelligence":"الذكاء الفيروسي","AI advertising video platform":"منصة فيديو إعلانية بالذكاء الاصطناعي","Explore the dashboard":"استكشف لوحة التحكم","Recent campaigns":"الحملات الأخيرة","View all":"عرض الكل","Full report":"التقرير الكامل","New Campaign":"حملة جديدة","Active campaigns":"الحملات النشطة","Concepts generated":"المفاهيم المُنشأة","Videos exported":"الفيديوهات المُصدّرة","Manage brands":"إدارة العلامات التجارية","Score content":"تقييم المحتوى","Generate 5 concepts":"إنشاء 5 مفاهيم","Edit & export":"تعديل وتصدير","Overall potential":"الإمكانات العامة","Ready":"جاهز","Published":"منشور","Draft":"مسودة","In Review":"قيد المراجعة","All":"الكل","Search campaigns":"البحث عن الحملات","No campaigns found":"لم يتم العثور على حملات","Viral score":"النتيجة الفيروسية","Marketing strategy":"استراتيجية التسويق","Call to action":"دعوة لاتخاذ إجراء","Save script":"حفظ النص","Edit":"تعديل","Selected":"محدد","Use this concept":"استخدم هذا المفهوم","Pause preview":"إيقاف المعاينة مؤقتًا","Play preview":"تشغيل المعاينة","Scene timeline":"الخط الزمني للمشاهد","Scene":"مشهد","Format":"التنسيق","Audio & captions":"الصوت والترجمات","Music volume":"مستوى الموسيقى","Create free video":"إنشاء فيديو مجاني","Brand name":"اسم العلامة التجارية","Brand colors":"ألوان العلامة التجارية","Live preview":"معاينة مباشرة","Add a product":"إضافة منتج","Add product":"إضافة منتج","Enter":"إدخال","Hook Score":"درجة الخطاف","Emotion Score":"درجة العاطفة","Attention Score":"درجة الانتباه","Share Potential":"إمكانات المشاركة","Ready to apply these insights?":"هل أنت مستعد لتطبيق هذه الرؤى؟"},
-  Japanese: {"Sign in":"ログイン","Create Campaign":"キャンペーンを作成","Dashboard":"ダッシュボード","Brand Studio":"ブランドスタジオ","Campaigns":"キャンペーン","Video Studio":"ビデオスタジオ","Viral Intelligence":"バイラルインテリジェンス","AI advertising video platform":"AI広告動画プラットフォーム","Explore the dashboard":"ダッシュボードを見る","Recent campaigns":"最近のキャンペーン","View all":"すべて表示","Full report":"完全レポート","New Campaign":"新しいキャンペーン","Active campaigns":"進行中のキャンペーン","Concepts generated":"生成されたコンセプト","Videos exported":"書き出した動画","Manage brands":"ブランドを管理","Score content":"コンテンツを評価","Generate 5 concepts":"5つのコンセプトを生成","Edit & export":"編集して書き出す","Overall potential":"総合ポテンシャル","Ready":"準備完了","Published":"公開済み","Draft":"下書き","In Review":"レビュー中","All":"すべて","Search campaigns":"キャンペーンを検索","No campaigns found":"キャンペーンが見つかりません","Viral score":"バイラルスコア","Marketing strategy":"マーケティング戦略","Call to action":"行動喚起","Save script":"台本を保存","Edit":"編集","Selected":"選択済み","Use this concept":"このコンセプトを使用","Pause preview":"プレビューを一時停止","Play preview":"プレビューを再生","Scene timeline":"シーンのタイムライン","Scene":"シーン","Format":"形式","Audio & captions":"音声と字幕","Music volume":"音量","Create free video":"無料動画を作成","Brand name":"ブランド名","Brand colors":"ブランドカラー","Live preview":"ライブプレビュー","Add a product":"商品を追加","Add product":"商品を追加","Enter":"入力","Hook Score":"フックスコア","Emotion Score":"感情スコア","Attention Score":"注目スコア","Share Potential":"共有ポテンシャル","Ready to apply these insights?":"これらのインサイトを適用しますか？"},
-  Korean: {"Sign in":"로그인","Create Campaign":"캠페인 만들기","Dashboard":"대시보드","Brand Studio":"브랜드 스튜디오","Campaigns":"캠페인","Video Studio":"비디오 스튜디오","Viral Intelligence":"바이럴 인텔리전스","AI advertising video platform":"AI 광고 영상 플랫폼","Explore the dashboard":"대시보드 보기","Recent campaigns":"최근 캠페인","View all":"모두 보기","Full report":"전체 보고서","New Campaign":"새 캠페인","Active campaigns":"활성 캠페인","Concepts generated":"생성된 콘셉트","Videos exported":"내보낸 동영상","Manage brands":"브랜드 관리","Score content":"콘텐츠 점수","Generate 5 concepts":"콘셉트 5개 생성","Edit & export":"편집 및 내보내기","Overall potential":"전체 잠재력","Ready":"준비됨","Published":"게시됨","Draft":"초안","In Review":"검토 중","All":"전체","Search campaigns":"캠페인 검색","No campaigns found":"캠페인을 찾을 수 없습니다","Viral score":"바이럴 점수","Marketing strategy":"마케팅 전략","Call to action":"행동 유도","Save script":"스크립트 저장","Edit":"편집","Selected":"선택됨","Use this concept":"이 콘셉트 사용","Pause preview":"미리보기 일시정지","Play preview":"미리보기 재생","Scene timeline":"장면 타임라인","Scene":"장면","Format":"형식","Audio & captions":"오디오 및 자막","Music volume":"음악 볼륨","Create free video":"무료 동영상 만들기","Brand name":"브랜드 이름","Brand colors":"브랜드 색상","Live preview":"실시간 미리보기","Add a product":"제품 추가","Add product":"제품 추가","Enter":"입력","Hook Score":"훅 점수","Emotion Score":"감정 점수","Attention Score":"주의 점수","Share Potential":"공유 잠재력","Ready to apply these insights?":"이 인사이트를 적용할 준비가 되셨나요?"},
-  Chinese: {"Sign in":"登录","Create Campaign":"创建广告活动","Dashboard":"控制面板","Brand Studio":"品牌工作室","Campaigns":"广告活动","Video Studio":"视频工作室","Viral Intelligence":"病毒传播智能","AI advertising video platform":"AI 广告视频平台","Explore the dashboard":"查看控制面板","Recent campaigns":"最近的广告活动","View all":"查看全部","Full report":"完整报告","New Campaign":"新广告活动","Active campaigns":"进行中的广告活动","Concepts generated":"已生成概念","Videos exported":"已导出视频","Manage brands":"管理品牌","Score content":"内容评分","Generate 5 concepts":"生成 5 个概念","Edit & export":"编辑并导出","Overall potential":"综合潜力","Ready":"就绪","Published":"已发布","Draft":"草稿","In Review":"审核中","All":"全部","Search campaigns":"搜索广告活动","No campaigns found":"未找到广告活动","Viral score":"传播分数","Marketing strategy":"营销策略","Call to action":"行动号召","Save script":"保存脚本","Edit":"编辑","Selected":"已选择","Use this concept":"使用此概念","Pause preview":"暂停预览","Play preview":"播放预览","Scene timeline":"场景时间线","Scene":"场景","Format":"格式","Audio & captions":"音频和字幕","Music volume":"音乐音量","Create free video":"创建免费视频","Brand name":"品牌名称","Brand colors":"品牌颜色","Live preview":"实时预览","Add a product":"添加产品","Add product":"添加产品","Enter":"回车","Hook Score":"钩子评分","Emotion Score":"情绪评分","Attention Score":"注意力评分","Share Potential":"分享潜力","Ready to apply these insights?":"准备好应用这些洞察了吗？"},
-  Hindi: {"Sign in":"साइन इन","Create Campaign":"कैंपेन बनाएं","Dashboard":"डैशबोर्ड","Brand Studio":"ब्रांड स्टूडियो","Campaigns":"कैंपेन","Video Studio":"वीडियो स्टूडियो","Viral Intelligence":"वायरल इंटेलिजेंस","AI advertising video platform":"AI विज्ञापन वीडियो प्लेटफ़ॉर्म","Explore the dashboard":"डैशबोर्ड देखें","Recent campaigns":"हाल के कैंपेन","View all":"सभी देखें","Full report":"पूरी रिपोर्ट","New Campaign":"नया कैंपेन","Active campaigns":"सक्रिय कैंपेन","Concepts generated":"जनरेट किए गए कॉन्सेप्ट","Videos exported":"एक्सपोर्ट किए गए वीडियो","Manage brands":"ब्रांड प्रबंधित करें","Score content":"कंटेंट स्कोर करें","Generate 5 concepts":"5 कॉन्सेप्ट बनाएं","Edit & export":"एडिट और एक्सपोर्ट","Overall potential":"कुल क्षमता","Ready":"तैयार","Published":"प्रकाशित","Draft":"ड्राफ्ट","In Review":"समीक्षा में","All":"सभी","Search campaigns":"कैंपेन खोजें","No campaigns found":"कोई कैंपेन नहीं मिला","Viral score":"वायरल स्कोर","Marketing strategy":"मार्केटिंग रणनीति","Call to action":"कार्रवाई के लिए आह्वान","Save script":"स्क्रिप्ट सेव करें","Edit":"एडिट","Selected":"चयनित","Use this concept":"इस कॉन्सेप्ट का उपयोग करें","Pause preview":"प्रीव्यू रोकें","Play preview":"प्रीव्यू चलाएं","Scene timeline":"सीन टाइमलाइन","Scene":"सीन","Format":"फ़ॉर्मेट","Audio & captions":"ऑडियो और कैप्शन","Music volume":"म्यूज़िक वॉल्यूम","Create free video":"मुफ़्त वीडियो बनाएं","Brand name":"ब्रांड नाम","Brand colors":"ब्रांड रंग","Live preview":"लाइव प्रीव्यू","Add a product":"प्रोडक्ट जोड़ें","Add product":"प्रोडक्ट जोड़ें","Enter":"एंटर","Hook Score":"हुक स्कोर","Emotion Score":"भावना स्कोर","Attention Score":"ध्यान स्कोर","Share Potential":"शेयर क्षमता","Ready to apply these insights?":"क्या आप इन जानकारियों को लागू करने के लिए तैयार हैं?"},
-  Ukrainian: {"Sign in":"Увійти","Create Campaign":"Створити кампанію","Dashboard":"Панель керування","Brand Studio":"Студія бренду","Campaigns":"Кампанії","Video Studio":"Відеостудія","Viral Intelligence":"Віральна аналітика","AI advertising video platform":"AI-платформа рекламних відео","Explore the dashboard":"Відкрити панель","Recent campaigns":"Останні кампанії","View all":"Переглянути все","Full report":"Повний звіт","New Campaign":"Нова кампанія","Active campaigns":"Активні кампанії","Concepts generated":"Створено концептів","Videos exported":"Експортовано відео","Manage brands":"Керувати брендами","Score content":"Оцінити контент","Generate 5 concepts":"Створити 5 концептів","Edit & export":"Редагувати й експортувати","Overall potential":"Загальний потенціал","Ready":"Готово","Published":"Опубліковано","Draft":"Чернетка","In Review":"На перевірці","All":"Усі","Search campaigns":"Пошук кампаній","No campaigns found":"Кампаній не знайдено","Viral score":"Віральний бал","Marketing strategy":"Маркетингова стратегія","Call to action":"Заклик до дії","Save script":"Зберегти сценарій","Edit":"Редагувати","Selected":"Вибрано","Use this concept":"Використати цей концепт","Pause preview":"Призупинити попередній перегляд","Play preview":"Відтворити попередній перегляд","Scene timeline":"Таймлайн сцен","Scene":"Сцена","Format":"Формат","Audio & captions":"Аудіо та субтитри","Music volume":"Гучність музики","Create free video":"Створити безкоштовне відео","Brand name":"Назва бренду","Brand colors":"Кольори бренду","Live preview":"Попередній перегляд наживо","Add a product":"Додати продукт","Add product":"Додати продукт","Enter":"Ввід","Hook Score":"Оцінка хука","Emotion Score":"Оцінка емоцій","Attention Score":"Оцінка уваги","Share Potential":"Потенціал поширення","Ready to apply these insights?":"Готові застосувати ці інсайти?"},
+type LanguageName = (typeof LANGUAGES)[number][0]
+
+const LanguageContext = createContext<{
+  language: LanguageName
+  setLanguage: (v: LanguageName) => void
+}>({ language: "English", setLanguage: () => {} })
+
+function getCookie(name: string) {
+  if (typeof document === "undefined") return ""
+  const found = document.cookie.split("; ").find((row) => row.startsWith(`${name}=`))
+  return found ? decodeURIComponent(found.split("=").slice(1).join("=")) : ""
 }
 
-
-Object.assign(T, {
-  Czech:{"Dashboard":"Nástěnka","Create Campaign":"Vytvořit kampaň","Brand Studio":"Studio značky","Campaigns":"Kampaně","Video Studio":"Video studio","Viral Intelligence":"Virální inteligence","Sign in":"Přihlásit se","New Campaign":"Nová kampaň","All":"Vše","Ready":"Připraveno","Published":"Publikováno","Draft":"Koncept","Edit":"Upravit","Save script":"Uložit scénář","Create free video":"Vytvořit video zdarma"},
-  Slovak:{"Dashboard":"Nástenka","Create Campaign":"Vytvoriť kampaň","Brand Studio":"Štúdio značky","Campaigns":"Kampane","Video Studio":"Video štúdio","Viral Intelligence":"Virálna inteligencia","Sign in":"Prihlásiť sa","New Campaign":"Nová kampaň","All":"Všetky","Ready":"Pripravené","Published":"Publikované","Draft":"Koncept","Edit":"Upraviť","Save script":"Uložiť scenár","Create free video":"Vytvoriť video zadarmo"},
-  Hungarian:{"Dashboard":"Irányítópult","Create Campaign":"Kampány létrehozása","Brand Studio":"Márkastúdió","Campaigns":"Kampányok","Video Studio":"Videóstúdió","Viral Intelligence":"Virális intelligencia","Sign in":"Bejelentkezés","New Campaign":"Új kampány","All":"Összes","Ready":"Kész","Published":"Közzétéve","Draft":"Piszkozat","Edit":"Szerkesztés","Save script":"Forgatókönyv mentése","Create free video":"Ingyenes videó készítése"},
-  Greek:{"Dashboard":"Πίνακας ελέγχου","Create Campaign":"Δημιουργία καμπάνιας","Brand Studio":"Studio μάρκας","Campaigns":"Καμπάνιες","Video Studio":"Studio βίντεο","Viral Intelligence":"Viral Intelligence","Sign in":"Σύνδεση","New Campaign":"Νέα καμπάνια","All":"Όλα","Ready":"Έτοιμο","Published":"Δημοσιευμένο","Draft":"Πρόχειρο","Edit":"Επεξεργασία","Save script":"Αποθήκευση σεναρίου","Create free video":"Δημιουργία δωρεάν βίντεο"},
-  Hebrew:{"Dashboard":"לוח בקרה","Create Campaign":"יצירת קמפיין","Brand Studio":"סטודיו למותג","Campaigns":"קמפיינים","Video Studio":"סטודיו וידאו","Viral Intelligence":"מודיעין ויראלי","Sign in":"התחברות","New Campaign":"קמפיין חדש","All":"הכול","Ready":"מוכן","Published":"פורסם","Draft":"טיוטה","Edit":"עריכה","Save script":"שמירת תסריט","Create free video":"יצירת סרטון בחינם"},
-  Bengali:{"Dashboard":"ড্যাশবোর্ড","Create Campaign":"ক্যাম্পেইন তৈরি করুন","Brand Studio":"ব্র্যান্ড স্টুডিও","Campaigns":"ক্যাম্পেইনসমূহ","Video Studio":"ভিডিও স্টুডিও","Viral Intelligence":"ভাইরাল ইন্টেলিজেন্স","Sign in":"সাইন ইন","New Campaign":"নতুন ক্যাম্পেইন","All":"সব","Ready":"প্রস্তুত","Published":"প্রকাশিত","Draft":"খসড়া","Edit":"সম্পাদনা","Save script":"স্ক্রিপ্ট সংরক্ষণ","Create free video":"ফ্রি ভিডিও তৈরি করুন"},
-  Urdu:{"Dashboard":"ڈیش بورڈ","Create Campaign":"مہم بنائیں","Brand Studio":"برانڈ اسٹوڈیو","Campaigns":"مہمات","Video Studio":"ویڈیو اسٹوڈیو","Viral Intelligence":"وائرل انٹیلی جنس","Sign in":"سائن اِن","New Campaign":"نئی مہم","All":"سب","Ready":"تیار","Published":"شائع شدہ","Draft":"مسودہ","Edit":"ترمیم","Save script":"اسکرپٹ محفوظ کریں","Create free video":"مفت ویڈیو بنائیں"},
-  Persian:{"Dashboard":"داشبورد","Create Campaign":"ایجاد کمپین","Brand Studio":"استودیو برند","Campaigns":"کمپین‌ها","Video Studio":"استودیو ویدیو","Viral Intelligence":"هوش وایرال","Sign in":"ورود","New Campaign":"کمپین جدید","All":"همه","Ready":"آماده","Published":"منتشرشده","Draft":"پیش‌نویس","Edit":"ویرایش","Save script":"ذخیره متن","Create free video":"ساخت ویدیوی رایگان"},
-  Vietnamese:{"Dashboard":"Bảng điều khiển","Create Campaign":"Tạo chiến dịch","Brand Studio":"Studio thương hiệu","Campaigns":"Chiến dịch","Video Studio":"Studio video","Viral Intelligence":"Trí tuệ lan truyền","Sign in":"Đăng nhập","New Campaign":"Chiến dịch mới","All":"Tất cả","Ready":"Sẵn sàng","Published":"Đã xuất bản","Draft":"Bản nháp","Edit":"Chỉnh sửa","Save script":"Lưu kịch bản","Create free video":"Tạo video miễn phí"},
-  Thai:{"Dashboard":"แดชบอร์ด","Create Campaign":"สร้างแคมเปญ","Brand Studio":"สตูดิโอแบรนด์","Campaigns":"แคมเปญ","Video Studio":"สตูดิโอวิดีโอ","Viral Intelligence":"อัจฉริยะไวรัล","Sign in":"เข้าสู่ระบบ","New Campaign":"แคมเปญใหม่","All":"ทั้งหมด","Ready":"พร้อม","Published":"เผยแพร่แล้ว","Draft":"ฉบับร่าง","Edit":"แก้ไข","Save script":"บันทึกสคริปต์","Create free video":"สร้างวิดีโอฟรี"},
-  Indonesian:{"Dashboard":"Dasbor","Create Campaign":"Buat kampanye","Brand Studio":"Studio merek","Campaigns":"Kampanye","Video Studio":"Studio video","Viral Intelligence":"Intelijen viral","Sign in":"Masuk","New Campaign":"Kampanye baru","All":"Semua","Ready":"Siap","Published":"Diterbitkan","Draft":"Draf","Edit":"Edit","Save script":"Simpan skrip","Create free video":"Buat video gratis"},
-  Malay:{"Dashboard":"Papan pemuka","Create Campaign":"Cipta kempen","Brand Studio":"Studio jenama","Campaigns":"Kempen","Video Studio":"Studio video","Viral Intelligence":"Kecerdasan viral","Sign in":"Log masuk","New Campaign":"Kempen baharu","All":"Semua","Ready":"Sedia","Published":"Diterbitkan","Draft":"Draf","Edit":"Edit","Save script":"Simpan skrip","Create free video":"Cipta video percuma"},
-  Filipino:{"Dashboard":"Dashboard","Create Campaign":"Gumawa ng campaign","Brand Studio":"Brand Studio","Campaigns":"Mga campaign","Video Studio":"Video Studio","Viral Intelligence":"Viral Intelligence","Sign in":"Mag-sign in","New Campaign":"Bagong campaign","All":"Lahat","Ready":"Handa","Published":"Nai-publish","Draft":"Draft","Edit":"I-edit","Save script":"I-save ang script","Create free video":"Gumawa ng libreng video"},
-  Swedish:{"Dashboard":"Instrumentpanel","Create Campaign":"Skapa kampanj","Brand Studio":"Varumärkesstudio","Campaigns":"Kampanjer","Video Studio":"Videostudio","Viral Intelligence":"Viral intelligens","Sign in":"Logga in","New Campaign":"Ny kampanj","All":"Alla","Ready":"Klar","Published":"Publicerad","Draft":"Utkast","Edit":"Redigera","Save script":"Spara manus","Create free video":"Skapa gratis video"},
-  Norwegian:{"Dashboard":"Dashbord","Create Campaign":"Opprett kampanje","Brand Studio":"Merkevare-studio","Campaigns":"Kampanjer","Video Studio":"Videostudio","Viral Intelligence":"Viral intelligens","Sign in":"Logg inn","New Campaign":"Ny kampanje","All":"Alle","Ready":"Klar","Published":"Publisert","Draft":"Utkast","Edit":"Rediger","Save script":"Lagre manus","Create free video":"Lag gratis video"},
-  Danish:{"Dashboard":"Kontrolpanel","Create Campaign":"Opret kampagne","Brand Studio":"Brandstudio","Campaigns":"Kampagner","Video Studio":"Videostudio","Viral Intelligence":"Viral intelligens","Sign in":"Log ind","New Campaign":"Ny kampagne","All":"Alle","Ready":"Klar","Published":"Udgivet","Draft":"Kladde","Edit":"Rediger","Save script":"Gem manuskript","Create free video":"Opret gratis video"},
-  Finnish:{"Dashboard":"Hallintapaneeli","Create Campaign":"Luo kampanja","Brand Studio":"Brändistudio","Campaigns":"Kampanjat","Video Studio":"Videostudio","Viral Intelligence":"Viraaliäly","Sign in":"Kirjaudu","New Campaign":"Uusi kampanja","All":"Kaikki","Ready":"Valmis","Published":"Julkaistu","Draft":"Luonnos","Edit":"Muokkaa","Save script":"Tallenna käsikirjoitus","Create free video":"Luo ilmainen video"},
-  Bulgarian:{"Dashboard":"Табло","Create Campaign":"Създай кампания","Brand Studio":"Студио на марката","Campaigns":"Кампании","Video Studio":"Видео студио","Viral Intelligence":"Вирусен интелект","Sign in":"Вход","New Campaign":"Нова кампания","All":"Всички","Ready":"Готово","Published":"Публикувано","Draft":"Чернова","Edit":"Редактирай","Save script":"Запази сценария","Create free video":"Създай безплатно видео"},
-  Croatian:{"Dashboard":"Nadzorna ploča","Create Campaign":"Izradi kampanju","Brand Studio":"Studio brenda","Campaigns":"Kampanje","Video Studio":"Video studio","Viral Intelligence":"Viralna inteligencija","Sign in":"Prijava","New Campaign":"Nova kampanja","All":"Sve","Ready":"Spremno","Published":"Objavljeno","Draft":"Nacrt","Edit":"Uredi","Save script":"Spremi scenarij","Create free video":"Izradi besplatni video"},
-  Serbian:{"Dashboard":"Контролна табла","Create Campaign":"Креирај кампању","Brand Studio":"Студио бренда","Campaigns":"Кампање","Video Studio":"Видео студио","Viral Intelligence":"Вирална интелигенција","Sign in":"Пријави се","New Campaign":"Нова кампања","All":"Све","Ready":"Спремно","Published":"Објављено","Draft":"Нацрт","Edit":"Уреди","Save script":"Сачувај сценарио","Create free video":"Направи бесплатан видео"},
-  Slovenian:{"Dashboard":"Nadzorna plošča","Create Campaign":"Ustvari kampanjo","Brand Studio":"Studio blagovne znamke","Campaigns":"Kampanje","Video Studio":"Video studio","Viral Intelligence":"Viralna inteligenca","Sign in":"Prijava","New Campaign":"Nova kampanja","All":"Vse","Ready":"Pripravljeno","Published":"Objavljeno","Draft":"Osnutek","Edit":"Uredi","Save script":"Shrani scenarij","Create free video":"Ustvari brezplačen video"},
-})
-
-
-const LANGUAGE_LABELS: Record<string,string> = { Romanian:"Limbă", Italian:"Lingua", Spanish:"Idioma", German:"Sprache", French:"Langue", Portuguese:"Idioma", Dutch:"Taal", Polish:"Język", Czech:"Jazyk", Slovak:"Jazyk", Hungarian:"Nyelv", Greek:"Γλώσσα", Turkish:"Dil", Arabic:"اللغة", Hebrew:"שפה", Hindi:"भाषा", Bengali:"ভাষা", Urdu:"زبان", Persian:"زبان", "Chinese Simplified":"语言", "Chinese Traditional":"語言", Japanese:"言語", Korean:"언어", Vietnamese:"Ngôn ngữ", Thai:"ภาษา", Indonesian:"Bahasa", Malay:"Bahasa", Filipino:"Wika", Swedish:"Språk", Norwegian:"Språk", Danish:"Sprog", Finnish:"Kieli", Ukrainian:"Мова", Bulgarian:"Език", Croatian:"Jezik", Serbian:"Језик", Slovenian:"Jezik" }
-for (const [name,label] of Object.entries(LANGUAGE_LABELS)) T[name] = { ...(T[name] || {}), Language: label }
-
-const baseKeys = ["Language","Dashboard","Create Campaign","Brand Studio","Campaigns","Video Studio","Viral Intelligence","Sign in","View all","Full report","New Campaign","Active campaigns","Concepts generated","Videos exported","Manage brands","Score content","Generate 5 concepts","Edit & export","Overall potential","Ready","Published","Draft","In Review","All","Search campaigns","No campaigns found","Viral score","Marketing strategy","Call to action","Save script","Edit","Selected","Use this concept","Pause preview","Play preview","Scene timeline","Scene","Format","Audio & captions","Music volume","Create free video","Brand name","Brand colors","Live preview","Add a product","Add product","Enter","Hook Score","Emotion Score","Attention Score","Share Potential","Ready to apply these insights?"]
-
-// For every supported language we keep the selector fully functional. Languages without a dedicated
-// translation table inherit English for phrases not yet localized, never a broken/missing label.
-for (const [name] of LANGUAGES) {
-  if (!T[name]) T[name] = {}
-  for (const key of baseKeys) if (!(key in T[name])) T[name][key] = key
+function setCookie(name: string, value: string) {
+  document.cookie = `${name}=${encodeURIComponent(value)};path=/;max-age=31536000;SameSite=Lax`
 }
-T["Chinese Simplified"] = T.Chinese
-T["Chinese Traditional"] = T.Chinese
 
-const LANGUAGE_CODES: Record<string,string> = { English:"en", Romanian:"ro", Italian:"it", Spanish:"es", German:"de", French:"fr", Portuguese:"pt", Dutch:"nl", Polish:"pl", Czech:"cs", Slovak:"sk", Hungarian:"hu", Greek:"el", Turkish:"tr", Arabic:"ar", Hebrew:"he", Hindi:"hi", Bengali:"bn", Urdu:"ur", Persian:"fa", "Chinese Simplified":"zh-CN", "Chinese Traditional":"zh-TW", Japanese:"ja", Korean:"ko", Vietnamese:"vi", Thai:"th", Indonesian:"id", Malay:"ms", Filipino:"fil", Swedish:"sv", Norwegian:"no", Danish:"da", Finnish:"fi", Ukrainian:"uk", Bulgarian:"bg", Croatian:"hr", Serbian:"sr", Slovenian:"sl" }
+function clearGoogleTranslation() {
+  document.cookie = "googtrans=;path=/;max-age=0"
+  document.cookie = "googtrans=;path=/;domain=" + window.location.hostname + ";max-age=0"
+}
 
-const LanguageContext = createContext<{ language:string; setLanguage:(v:string)=>void; t:(v:string)=>string }>({
-  language: "English", setLanguage: ()=>{}, t: (v)=>v,
-})
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguageState] = useState<LanguageName>("English")
 
-function translateDocument(language: string) {
-  const dict = T[language] || T.English
-  const originals = (window as any).__vfOriginals || ((window as any).__vfOriginals = new WeakMap<Node,string>())
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
-  const nodes: Node[] = []
-  let n: Node | null
-  while ((n = walker.nextNode())) nodes.push(n)
-  for (const node of nodes) {
-    const parent = node.parentElement
-    if (!parent || ["SCRIPT","STYLE","NOSCRIPT","OPTION"].includes(parent.tagName)) continue
-    const current = node.nodeValue || ""
-    if (!originals.has(node)) originals.set(node, current)
-    const original = originals.get(node) as string
-    const trimmed = original.trim()
-    if (!trimmed) continue
-    const translated = dict[trimmed] || trimmed
-    const lead = original.match(/^\s*/)?.[0] || ""
-    const trail = original.match(/\s*$/)?.[0] || ""
-    const nextValue = lead + translated + trail
-    if (node.nodeValue !== nextValue) node.nodeValue = nextValue
-  }
-  document.querySelectorAll<HTMLElement>("input,textarea,[aria-label],[title]").forEach((el:any)=>{
-    for (const attr of ["placeholder","aria-label","title"]) {
-      if (!el.hasAttribute(attr)) continue
-      const key = `data-vf-orig-${attr}`
-      if (!el.hasAttribute(key)) el.setAttribute(key, el.getAttribute(attr) || "")
-      const original = el.getAttribute(key) || ""
-      el.setAttribute(attr, dict[original] || original)
+  useEffect(() => {
+    const saved = localStorage.getItem("viralforge-language") as LanguageName | null
+    const validSaved = saved && LANGUAGES.some(([name]) => name === saved)
+    if (validSaved) setLanguageState(saved)
+
+    const googleCookie = getCookie("googtrans")
+    if (!saved && googleCookie) {
+      const code = googleCookie.split("/").pop()
+      const match = LANGUAGES.find(([, , langCode]) => langCode === code)
+      if (match) setLanguageState(match[0])
     }
-  })
-}
+  }, [])
 
-export function LanguageProvider({children}:{children:React.ReactNode}) {
-  const [language,setLanguage] = useState("English")
-  useEffect(()=>{
-    const saved = localStorage.getItem("viralforge-language")
-    if (saved && LANGUAGES.some(([n])=>n===saved)) setLanguage(saved)
-  },[])
-  useEffect(()=>{
+  useEffect(() => {
     localStorage.setItem("viralforge-language", language)
-    document.documentElement.lang = LANGUAGE_CODES[language] || "en"
-    if (language === "Arabic" || language === "Hebrew" || language === "Persian" || language === "Urdu") document.documentElement.dir = "rtl"
-    else document.documentElement.dir = "ltr"
-    translateDocument(language)
-    const observer = new MutationObserver(()=>translateDocument(language))
-    observer.observe(document.body,{subtree:true,childList:true,characterData:true})
-    return ()=>observer.disconnect()
-  },[language])
-  const value = useMemo(()=>({language,setLanguage,t:(v:string)=>T[language]?.[v] || v}),[language])
-  return <LanguageContext.Provider value={value}>{children}<LanguageSwitcher/></LanguageContext.Provider>
+    const selected = LANGUAGES.find(([name]) => name === language)
+    const code = selected?.[2] || "en"
+    document.documentElement.lang = code
+    document.documentElement.dir = ["ar", "he", "fa", "ur"].includes(code) ? "rtl" : "ltr"
+  }, [language])
+
+  const setLanguage = (next: LanguageName) => {
+    const selected = LANGUAGES.find(([name]) => name === next)
+    const code = selected?.[2] || "en"
+    setLanguageState(next)
+    localStorage.setItem("viralforge-language", next)
+
+    if (code === "en") {
+      clearGoogleTranslation()
+    } else {
+      setCookie("googtrans", `/en/${code}`)
+      setCookie("googtrans", `/en/${code}`)
+    }
+
+    // Google Translate translates the complete rendered page, including dynamically
+    // added dashboard content. Reloading guarantees a clean translation state.
+    window.location.reload()
+  }
+
+  const value = useMemo(() => ({ language, setLanguage }), [language])
+
+  return (
+    <LanguageContext.Provider value={value}>
+      <Script
+        id="google-translate-loader"
+        strategy="afterInteractive"
+        src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+      />
+      <div id="google_translate_element" className="hidden" aria-hidden="true" />
+      <style>{`
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
+        body { top: 0 !important; }
+        .goog-tooltip, .goog-tooltip:hover { display: none !important; }
+        .goog-text-highlight { background: transparent !important; box-shadow: none !important; }
+        .skiptranslate > iframe { display: none !important; }
+      `}</style>
+      {children}
+      <LanguageSwitcher />
+    </LanguageContext.Provider>
+  )
 }
 
-export function useLanguage(){ return useContext(LanguageContext) }
+export function useLanguage() {
+  return useContext(LanguageContext)
+}
 
-export function LanguageSwitcher(){
-  const {language,setLanguage}=useLanguage()
-  return <div className="fixed right-4 top-3 z-[100]">
-    <label className="sr-only" htmlFor="viralforge-global-language">Language</label>
-    <select id="viralforge-global-language" value={language} onChange={e=>setLanguage(e.target.value)} className="h-9 max-w-[170px] rounded-lg border border-border bg-card/95 px-3 text-xs font-medium text-foreground shadow-lg backdrop-blur-md outline-none">
-      {LANGUAGES.map(([value,label])=><option key={value} value={value}>{label}</option>)}
-    </select>
-  </div>
+export function LanguageSwitcher() {
+  const { language, setLanguage } = useLanguage()
+  return (
+    <div className="fixed right-4 top-3 z-[100]" translate="no">
+      <label className="sr-only" htmlFor="viralforge-global-language">Language</label>
+      <select
+        id="viralforge-global-language"
+        value={language}
+        onChange={(e) => setLanguage(e.target.value as LanguageName)}
+        className="h-9 max-w-[180px] rounded-lg border border-border bg-card/95 px-3 text-xs font-medium text-foreground shadow-lg backdrop-blur-md outline-none"
+      >
+        {LANGUAGES.map(([value, label]) => (
+          <option key={value} value={value}>{label}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+// Google Translate calls this global callback after loading its script.
+if (typeof window !== "undefined") {
+  ;(window as any).googleTranslateElementInit = () => {
+    const google = (window as any).google
+    if (google?.translate?.TranslateElement) {
+      new google.translate.TranslateElement({
+        pageLanguage: "en",
+        autoDisplay: false,
+        includedLanguages: LANGUAGES.map(([, , code]) => code).join(","),
+      }, "google_translate_element")
+    }
+  }
 }
