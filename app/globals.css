@@ -97,3 +97,8 @@
 @utility forge-glow {
   box-shadow: 0 0 0 1px oklch(0.7 0.19 47 / 0.25), 0 12px 40px -12px oklch(0.7 0.19 47 / 0.45);
 }
+
+/* Global language selector */
+@media (max-width: 640px) {
+  body { padding-top: 0.15rem; }
+}
