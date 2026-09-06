@@ -37,51 +37,124 @@ export default function VideoStudioPage() {
     setGenerating(true)
     setVideoError(null)
     setVideoUrl(null)
-    setVideoStatus("Starting video generation…")
+    setVideoStatus("Creating free browser video…")
 
     try {
-      const prompt = `Create a polished ${currentFormat.label} social media advertisement. ${
-        `Scene: ${SAMPLE_SCENES.map((s) => `${s.label}: ${s.description}`).join(". ")}. `
-      }Use dynamic camera movement, clear product focus, premium advertising cinematography, strong visual hook, realistic motion, and clean composition. Do not add fake logos or unsupported claims.`
-
-      const response = await fetch("/api/generate-video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt,
-          orientation: isWide ? "landscape" : isSquare ? "square" : "portrait",
-          aspectRatio: currentFormat.ratio,
-          duration: 5,
-        }),
-      })
-
-      const data = await response.json()
-      if (!response.ok || !data.projectId) throw new Error(data.error || "Video generation could not be started.")
-
-      setVideoStatus("Rendering video…")
-      for (let attempt = 0; attempt < 30; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, 5000))
-        const statusResponse = await fetch(`/api/video-status?id=${encodeURIComponent(data.projectId)}`, { cache: "no-store" })
-        const statusData = await statusResponse.json()
-        if (!statusResponse.ok) throw new Error(statusData.error || "Could not check video status.")
-
-        if (statusData.status === "complete" && statusData.videoUrl) {
-          setVideoUrl(statusData.videoUrl)
-          setVideoStatus("Video ready")
-          return
-        }
-        if (["error", "canceled"].includes(statusData.status)) {
-          throw new Error(statusData.error || `Video generation ${statusData.status}.`)
-        }
+      if (typeof window === "undefined" || !HTMLCanvasElement.prototype.captureStream || !window.MediaRecorder) {
+        throw new Error("Your browser does not support free browser video export. Try Chrome or Edge.")
       }
 
-      setVideoStatus("Still rendering — keep this page open and try again shortly.")
+      const canvas = document.createElement("canvas")
+      const width = isWide ? 1280 : 720
+      const height = isWide ? 720 : isSquare ? 720 : 1280
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext("2d")
+      if (!ctx) throw new Error("Could not start the video canvas.")
+
+      const stream = canvas.captureStream(30)
+      const mimeTypes = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"]
+      const mimeType = mimeTypes.find((type) => MediaRecorder.isTypeSupported(type))
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+      const chunks: BlobPart[] = []
+      recorder.ondataavailable = (event) => event.data.size && chunks.push(event.data)
+
+      const scenes = [
+        { title: "STOP THE SCROLL", text: "I did NOT expect this to work in 3 seconds…" },
+        { title: "THE PROBLEM", text: "Show the everyday friction point." },
+        { title: "THE REVEAL", text: "Your product enters the story." },
+        { title: "THE PROOF", text: "Highlight the key benefit." },
+        { title: "CALL TO ACTION", text: "Tap to try it today." },
+      ]
+
+      const drawFrame = (time: number) => {
+        const duration = 8000
+        const progress = Math.min(1, time / duration)
+        const sceneIndex = Math.min(scenes.length - 1, Math.floor(progress * scenes.length))
+        const scene = scenes[sceneIndex]
+        const local = (progress * scenes.length) % 1
+        const scale = 0.96 + Math.min(local, 1 - local) * 0.08
+
+        ctx.save()
+        ctx.fillStyle = "#11100f"
+        ctx.fillRect(0, 0, width, height)
+        const gradient = ctx.createLinearGradient(0, 0, width, height)
+        gradient.addColorStop(0, "#2a1b12")
+        gradient.addColorStop(0.5, "#11100f")
+        gradient.addColorStop(1, "#49331b")
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, width, height)
+
+        ctx.translate(width / 2, height / 2)
+        ctx.scale(scale, scale)
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.fillStyle = "rgba(255,255,255,0.65)"
+        ctx.font = `700 ${Math.max(22, width * 0.028)}px sans-serif`
+        ctx.fillText(`VIRALFORGE AI  ·  ${currentFormat.label}`, 0, -height * 0.27)
+        ctx.fillStyle = "white"
+        ctx.font = `900 ${Math.max(38, width * 0.065)}px sans-serif`
+        ctx.fillText(scene.title, 0, -height * 0.08)
+        ctx.fillStyle = "rgba(255,255,255,0.9)"
+        ctx.font = `500 ${Math.max(24, width * 0.032)}px sans-serif`
+        const words = scene.text.split(" ")
+        let line = ""
+        const lines: string[] = []
+        const maxWidth = width * 0.78
+        for (const word of words) {
+          const test = line ? `${line} ${word}` : word
+          if (ctx.measureText(test).width > maxWidth && line) {
+            lines.push(line)
+            line = word
+          } else line = test
+        }
+        if (line) lines.push(line)
+        lines.forEach((text, i) => ctx.fillText(text, 0, height * 0.03 + i * Math.max(32, width * 0.04)))
+        ctx.fillStyle = "rgba(255,255,255,0.18)"
+        ctx.fillRect(-width * 0.34, height * 0.22, width * 0.68, 8)
+        ctx.fillStyle = "white"
+        ctx.fillRect(-width * 0.34, height * 0.22, width * 0.68 * progress, 8)
+        ctx.restore()
+      }
+
+      recorder.start()
+      const started = performance.now()
+      await new Promise<void>((resolve) => {
+        const frame = (now: number) => {
+          const elapsed = now - started
+          drawFrame(elapsed)
+          if (elapsed < 8000) requestAnimationFrame(frame)
+          else resolve()
+        }
+        requestAnimationFrame(frame)
+      })
+
+      await new Promise<void>((resolve) => {
+        recorder.addEventListener("stop", () => resolve(), { once: true })
+        recorder.stop()
+        stream.getTracks().forEach((track) => track.stop())
+      })
+
+      const blob = new Blob(chunks, { type: mimeType || "video/webm" })
+      const url = URL.createObjectURL(blob)
+      setVideoUrl(url)
+      setVideoStatus("Free video ready — no AI/video credits used.")
     } catch (error) {
-      setVideoError(error instanceof Error ? error.message : "Video generation failed.")
+      setVideoError(error instanceof Error ? error.message : "Free video generation failed.")
       setVideoStatus(null)
     } finally {
       setGenerating(false)
     }
+  }
+
+  const exportVideo = () => {
+    if (!videoUrl) return
+    const link = document.createElement("a")
+    link.href = videoUrl
+    link.download = `viralforge-${currentFormat.id}.webm`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   }
 
   return (
@@ -90,7 +163,7 @@ export default function VideoStudioPage() {
         title="Video Studio"
         description="Assemble scenes, refine the script, choose voice and music, and export for every platform."
       >
-        <Button>
+        <Button onClick={exportVideo} disabled={!videoUrl}>
           <Download className="h-4 w-4" />
           Export video
         </Button>
@@ -290,10 +363,10 @@ export default function VideoStudioPage() {
 
           <Button size="lg" className="w-full forge-glow" onClick={generateVideo} disabled={generating}>
             <Sparkles className="h-4 w-4" />
-            {generating ? "Generating video…" : "Generate AI video"}
+            {generating ? "Creating free video…" : "Create free video"}
           </Button>
 
-          <Button size="lg" variant="outline" className="w-full" disabled={!videoUrl}>
+          <Button size="lg" variant="outline" className="w-full" onClick={exportVideo} disabled={!videoUrl}>
             <Download className="h-4 w-4" />
             Export {currentFormat.label}
           </Button>
