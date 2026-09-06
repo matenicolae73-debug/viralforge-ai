@@ -1,179 +1,43 @@
-import Link from "next/link"
-import Image from "next/image"
-import { ArrowRight, Sparkles, Palette, Clapperboard, TrendingUp, Play } from "lucide-react"
-import { ForgeLogo } from "@/components/forge-logo"
+"use client"
+import {useState} from "react"
 
-const FEATURES = [
-  {
-    icon: Sparkles,
-    title: "AI Campaign Concepts",
-    desc: "Generate multiple advertising directions with strategy, hooks, scripts, and calls to action in seconds.",
-  },
-  {
-    icon: Palette,
-    title: "Brand Studio",
-    desc: "Store your brand voice, colors, products, and audiences so every campaign stays perfectly on-brand.",
-  },
-  {
-    icon: Clapperboard,
-    title: "Video Studio",
-    desc: "Assemble scenes, edit scripts, pick voices and music, and export for every social format.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Viral Intelligence",
-    desc: "Score hooks, emotion, and attention to optimize content for stronger engagement and performance.",
-  },
-]
+export default function Home(){
+ const [prompt,setPrompt]=useState("A cinematic premium energy drink commercial on a futuristic city rooftop at golden hour")
+ const [resolution,setResolution]=useState("720p"),[aspect,setAspect]=useState("16:9"),[duration,setDuration]=useState(5)
+ const [busy,setBusy]=useState(false),[out,setOut]=useState<any>(null),[err,setErr]=useState("")
+ const [email,setEmail]=useState(""),[name,setName]=useState(""),[newKey,setNewKey]=useState<any>(null),[apiKey,setApiKey]=useState(""),[plan,setPlan]=useState("starter")
 
-const FORMATS = ["TikTok 9:16", "Instagram Reels", "YouTube Shorts", "Facebook 1:1", "YouTube 16:9"]
+ async function generate(){
+  setBusy(true);setOut(null);setErr("")
+  try{
+   const r=await fetch("/api/video/generate",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${apiKey}`,"Idempotency-Key":crypto.randomUUID()},body:JSON.stringify({prompt,resolution,aspectRatio:aspect,duration})})
+   const d=await r.json(); if(!r.ok) throw Error(d.error||"Generation failed")
+   if(d.videoUrl){setOut({...d,downloadUrl:d.videoUrl,message:"Video generated successfully."});return}
+   setOut({...d,message:`AI video job accepted. Request ID: ${d.requestId}. Generating…`})
+   for(let attempt=0;attempt<45;attempt++){
+    await new Promise(r=>setTimeout(r,4000))
+    const sr=await fetch(`/api/video/status?id=${encodeURIComponent(d.requestId)}`,{headers:{Authorization:`Bearer ${apiKey}`}})
+    const sd=await sr.json(); if(!sr.ok) throw Error(sd.error||"Unable to read video status")
+    if(sd.status==="COMPLETED"&&sd.videoUrl){setOut({...d,...sd,downloadUrl:sd.videoUrl,message:"Video generated successfully."});return}
+    if(["FAILED","CANCELLED","ERROR"].includes(sd.status)) throw Error("Video generation failed. Credits were refunded.")
+    setOut({...d,...sd,message:`Video status: ${sd.status}`})
+   }
+   throw Error("Video is still processing. Use the request ID to poll its status.")
+  }catch(e:any){setErr(e.message||"Generation failed")}finally{setBusy(false)}
+ }
 
-export default function LandingPage() {
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <ForgeLogo />
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/dashboard"
-              className="hidden h-8 items-center justify-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/dashboard/create"
-              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/80"
-            >
-              Create Campaign
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </header>
+ async function createKey(){setErr("");setNewKey(null);try{const r=await fetch("/api/keys/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,name})});const d=await r.json();if(!r.ok)throw Error(d.error);setNewKey(d);setApiKey(d.key)}catch(e:any){setErr(e.message)}}
+ async function buy(){try{const r=await fetch("/api/billing/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,plan,apiKey})});const d=await r.json();if(!r.ok)throw Error(d.error);location.href=d.url}catch(e:any){setErr(e.message)}}
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
-          <Image
-            src="/forge-hero.png"
-            alt=""
-            fill
-            priority
-            className="object-cover opacity-40"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:pb-28 lg:pt-32">
-          <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              AI advertising video platform
-            </span>
-            <h1 className="mt-6 text-balance font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-              Turn products into stories people want to watch.
-            </h1>
-            <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-              VIRALFORGE AI helps brands and businesses create powerful advertising video campaigns — optimizing
-              content for stronger engagement and performance across every platform.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link
-                href="/dashboard/create"
-                className="forge-glow inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/80"
-              >
-                Create Campaign
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/dashboard"
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-secondary px-2.5 text-sm font-medium text-secondary-foreground transition-all hover:bg-secondary/80"
-              >
-                <Play className="h-4 w-4" />
-                Explore the dashboard
-              </Link>
-            </div>
-
-            <div className="mt-10 flex flex-wrap gap-2">
-              {FORMATS.map((f) => (
-                <span
-                  key={f}
-                  className="rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground"
-                >
-                  {f}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
-        <div className="max-w-2xl">
-          <h2 className="text-balance font-display text-3xl font-bold tracking-tight sm:text-4xl">
-            Everything you need to forge scroll-stopping ads
-          </h2>
-          <p className="mt-4 text-pretty leading-relaxed text-muted-foreground">
-            From the first idea to the final export, VIRALFORGE AI gives your team a complete production studio powered
-            by artificial intelligence.
-          </p>
-        </div>
-
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map((f) => {
-            const Icon = f.icon
-            return (
-              <div
-                key={f.title}
-                className="group rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
-              >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-4 font-display text-lg font-semibold">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-card px-6 py-14 text-center sm:px-12">
-          <div className="pointer-events-none absolute inset-0 opacity-30">
-            <Image src="/forge-hero.png" alt="" fill className="object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-card via-card/70 to-card/40" />
-          </div>
-          <div className="relative mx-auto max-w-2xl">
-            <h2 className="text-balance font-display text-3xl font-bold tracking-tight sm:text-4xl">
-              Ready to forge your next campaign?
-            </h2>
-            <p className="mt-4 text-pretty leading-relaxed text-muted-foreground">
-              Build a full advertising concept — strategy, script, and video — in a single flow.
-            </p>
-            <Link
-              href="/dashboard/create"
-              className="forge-glow mt-8 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/80"
-            >
-              Create Campaign
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6">
-          <ForgeLogo size="sm" />
-          <p className="text-xs text-muted-foreground">
-            VIRALFORGE AI helps optimize advertising content for stronger engagement and performance.
-          </p>
-        </div>
-      </footer>
-    </div>
-  )
+ return <main className="shell">
+  <nav><div className="logo">ViralMovie <span>API</span></div><div className="links"><a href="#generate">Generate</a><a href="#keys">API Keys</a><a href="#pricing">Pricing</a></div></nav>
+  <section className="hero"><div className="badge">VIRALMOVIE VIDEO API</div><h1>Build your own <span className="grad">video API.</span></h1><p className="sub">Customers get a ViralMovie API key, buy credits and generate real AI videos without ever seeing the underlying provider key.</p></section>
+  <section className="grid" id="generate">
+   <div className="card"><h2>Generate video</h2><div className="muted">Credits depend on resolution: 360p/540p = 1 credit/sec · 720p = 3 credits/sec · 1080p = 4 credits/sec.</div><label>Prompt</label><textarea value={prompt} onChange={e=>setPrompt(e.target.value)}/><div className="row"><div><label>Resolution</label><select value={resolution} onChange={e=>setResolution(e.target.value)}><option>360p</option><option>540p</option><option>720p</option><option>1080p</option></select></div><div><label>Aspect ratio</label><select value={aspect} onChange={e=>setAspect(e.target.value)}><option>16:9</option><option>9:16</option><option>1:1</option></select></div></div><label>Duration</label><select value={duration} onChange={e=>setDuration(Number(e.target.value))}><option value={5}>5 seconds</option><option value={6}>6 seconds</option><option value={7}>7 seconds</option><option value={8}>8 seconds</option></select><button className="btn" disabled={busy||!prompt.trim()||!apiKey} onClick={generate}>{busy?"Generating…":"Generate AI video"}</button>{!apiKey&&<div className="status">Create an API key first.</div>}{err&&<div className="status">Error: {err}</div>}{out&&<div className="status"><b>{out.message}</b>{out.videoUrl&&<><video src={out.videoUrl} controls playsInline style={{width:"100%",borderRadius:12,marginTop:12}}/><a className="btn" style={{display:"inline-block",marginTop:12,textDecoration:"none"}} href={out.downloadUrl} download="viralmovie-video.mp4">Download MP4</a></>}</div>}</div>
+   <div className="card" id="keys"><h2>Customer API key</h2><p className="muted">ViralMovie creates the key. The provider key stays server-side.</p><label>Name</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="My app"/><label>Email</label><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" type="email"/><button className="btn" onClick={createKey}>Create API key · FREE</button>{newKey&&<div className="status"><b>Save your API key now</b><div className="code" style={{marginTop:8,wordBreak:"break-all"}}>{newKey.key}</div><p className="muted">10 free credits included.</p></div>}</div>
+  </section>
+  <section className="grid" id="pricing"><div className="card"><h2>Public API</h2><p className="muted">Authenticate with your ViralMovie key.</p><pre className="code">{`POST /api/video/generate\nAuthorization: Bearer vm_live_xxx\nIdempotency-Key: unique-request-id\nContent-Type: application/json\n\n{\n  "prompt": "cinematic coffee commercial",\n  "duration": 5,\n  "resolution": "720p",\n  "aspectRatio": "16:9"\n}`}</pre></div><div className="card"><h2>Buy API credits</h2><p className="muted">Stripe payments are converted into ViralMovie credits after webhook verification.</p><label>Email</label><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" type="email"/><select value={plan} onChange={e=>setPlan(e.target.value)}><option value="starter">Starter · 100 credits · €9</option><option value="pro">Pro · 500 credits · €29</option><option value="business">Business · 2,000 credits · €99</option></select><button className="btn" onClick={buy}>Pay with Stripe</button></div></section>
+  <section className="card"><h2>Production architecture</h2><div className="kpis"><div className="kpi"><b>Customer key</b><span>vm_live_…</span></div><div className="kpi"><b>Credits</b><span>Credits by resolution</span></div><div className="kpi"><b>Payments</b><span>Stripe → credits</span></div><div className="kpi"><b>AI video</b><span>fal.ai Vidu Q3 Turbo</span></div></div></section>
+  <div className="footer">ViralMovie API · production-ready architecture</div>
+ </main>
 }

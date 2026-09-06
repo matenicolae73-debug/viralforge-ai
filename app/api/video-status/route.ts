@@ -1,7 +1,0 @@
-import { NextResponse } from "next/server"
-
-export async function GET() {
-  return NextResponse.json({
-    error: "Free browser video mode is enabled; no remote video project is required.",
-  }, { status: 410 })
-}
