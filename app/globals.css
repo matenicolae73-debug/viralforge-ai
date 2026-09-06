@@ -102,3 +102,6 @@
 @media (max-width: 640px) {
   body { padding-top: 0.15rem; }
 }
+
+/* ViralForge: English-only UI */
+.language-selector,.language-switcher,[data-language-selector]{display:none!important;}
