@@ -7,8 +7,9 @@ export default function Home(){
  const [busy,setBusy]=useState(false),[out,setOut]=useState<any>(null),[err,setErr]=useState("")
  const [email,setEmail]=useState(""),[name,setName]=useState(""),[newKey,setNewKey]=useState<any>(null),[apiKey,setApiKey]=useState(""),[plan,setPlan]=useState("starter")
  const [campaign,setCampaign]=useState<any>(null),[campaignBusy,setCampaignBusy]=useState(false)
+ const [campaignVideos,setCampaignVideos]=useState<Record<number,any>>({})
  const [movie,setMovie]=useState<any>(null),[movieBusy,setMovieBusy]=useState(false)
- const [campaignForm,setCampaignForm]=useState({product:"",description:"",audience:"18–35 social media users",goal:"Get more sales",platform:"TikTok, Instagram Reels, Facebook Reels, YouTube Shorts",style:"Premium, cinematic, energetic",language:"English"})
+ const [campaignForm,setCampaignForm]=useState({product:"Coca-Cola",description:"A refreshing sparkling soft drink built for moments of connection, energy and celebration.",audience:"18–35 social media users",goal:"Get more sales",platform:"TikTok, Instagram Reels, Facebook Reels, YouTube Shorts",style:"Premium, cinematic, energetic",language:"English"})
  const [movieForm,setMovieForm]=useState({title:"",story:"",minutes:10,genre:"Cinematic drama",language:"English"})
 
  async function generate(){
@@ -32,8 +33,29 @@ export default function Home(){
 
  async function createKey(){setErr("");setNewKey(null);try{const r=await fetch("/api/keys/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,name})});const d=await r.json();if(!r.ok)throw Error(d.error);setNewKey(d);setApiKey(d.key)}catch(e:any){setErr(e.message)}}
  async function buy(){try{const r=await fetch("/api/billing/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,plan,apiKey})});const d=await r.json();if(!r.ok)throw Error(d.error);location.href=d.url}catch(e:any){setErr(e.message)}}
+ async function generateCampaignVideo(ad:any,index:number){
+  if(!apiKey){setErr("Create your ViralMovie API key first.");document.getElementById("keys")?.scrollIntoView({behavior:"smooth"});return}
+  setCampaignVideos(v=>({...v,[index]:{status:"STARTING"}}));setErr("")
+  try{
+   const isVertical=String(ad.format||"").includes("9:16")
+   const r=await fetch("/api/video/generate",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${apiKey}`,"Idempotency-Key":crypto.randomUUID()},body:JSON.stringify({prompt:ad.visualPrompt,resolution:"720p",aspectRatio:isVertical?"9:16":"16:9",duration:Math.min(8,Number(ad.duration)||8)})})
+   const d=await r.json();if(!r.ok)throw Error(d.error||"Ad video generation failed")
+   if(d.videoUrl){setCampaignVideos(v=>({...v,[index]:{status:"COMPLETED",videoUrl:d.videoUrl}}));return}
+   setCampaignVideos(v=>({...v,[index]:{status:d.status||"IN_QUEUE",requestId:d.requestId}}))
+   for(let attempt=0;attempt<45;attempt++){
+    await new Promise(r=>setTimeout(r,4000))
+    const sr=await fetch(`/api/video/status?id=${encodeURIComponent(d.requestId)}`,{headers:{Authorization:`Bearer ${apiKey}`}})
+    const sd=await sr.json();if(!sr.ok)throw Error(sd.error||"Unable to read ad video status")
+    if(sd.status==="COMPLETED"&&sd.videoUrl){setCampaignVideos(v=>({...v,[index]:{status:"COMPLETED",videoUrl:sd.videoUrl}}));return}
+    if(["FAILED","CANCELLED","ERROR"].includes(sd.status))throw Error("Ad video generation failed. Credits were refunded.")
+    setCampaignVideos(v=>({...v,[index]:{status:sd.status||"PROCESSING",requestId:d.requestId}}))
+   }
+   throw Error("Ad video is still processing. Use Video Studio to check the request.")
+  }catch(e:any){setCampaignVideos(v=>({...v,[index]:{status:"ERROR",error:e.message||"Generation failed"}}));setErr(e.message||"Ad video generation failed")}
+ }
+
  async function makeCampaign(){
-  setCampaignBusy(true);setCampaign(null);setErr("")
+  setCampaignBusy(true);setCampaign(null);setCampaignVideos({});setErr("")
   try{
    const r=await fetch("/api/campaign/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(campaignForm)})
    const d=await r.json();if(!r.ok)throw Error(d.error);setCampaign(d)
@@ -62,9 +84,9 @@ export default function Home(){
     <label>Product description</label><textarea value={campaignForm.description} onChange={e=>setCampaignForm({...campaignForm,description:e.target.value})} placeholder="What makes the product special?"/>
     <div className="row"><div><label>Goal</label><input value={campaignForm.goal} onChange={e=>setCampaignForm({...campaignForm,goal:e.target.value})}/></div><div><label>Platforms</label><input value={campaignForm.platform} onChange={e=>setCampaignForm({...campaignForm,platform:e.target.value})}/></div></div>
     <div className="row"><div><label>Style</label><input value={campaignForm.style} onChange={e=>setCampaignForm({...campaignForm,style:e.target.value})}/></div><div><label>Language</label><input value={campaignForm.language} onChange={e=>setCampaignForm({...campaignForm,language:e.target.value})}/></div></div>
-    <button className="btn" disabled={campaignBusy||!campaignForm.product.trim()} onClick={makeCampaign}>{campaignBusy?"Creating campaign…":"Create AI Campaign"}</button>
+    <div className="row"><button className="btn" disabled={campaignBusy||!campaignForm.product.trim()} onClick={makeCampaign}>{campaignBusy?"Creating campaign…":"Create AI Campaign"}</button><button className="btn secondary" type="button" onClick={()=>{setCampaignForm({...campaignForm,product:"Coca-Cola",description:"A refreshing sparkling soft drink built for moments of connection, energy and celebration.",audience:"18–34 social-first consumers",goal:"Increase brand engagement and sales",platform:"TikTok, Instagram Reels, Facebook Reels, YouTube Shorts",style:"Premium, cinematic, energetic, joyful",language:"English"});setTimeout(()=>document.getElementById("campaign")?.scrollIntoView({behavior:"smooth"}),0)}}>🥤 Load Coca-Cola Demo</button></div>
     {campaign&&<div className="result"><div className="pill">Source: {campaign.source}</div><h3>{campaign.plan.campaignName}</h3><p><b>Hook:</b> {campaign.plan.hook}</p><p><b>Slogan:</b> {campaign.plan.slogan}</p><p><b>CTA:</b> {campaign.plan.callToAction}</p>
-      <div className="adlist">{campaign.plan.ads.map((ad:any,i:number)=><div className="ad" key={i}><b>{ad.duration}s · {ad.format}</b><p>{ad.script}</p><div className="code">{ad.visualPrompt}</div><p className="muted">Caption: {ad.caption}</p><button className="btn secondary" onClick={()=>{setPrompt(ad.visualPrompt);setDuration(Math.min(8,ad.duration));setAspect(ad.format.includes("9:16")?"9:16":"16:9");document.getElementById("generate")?.scrollIntoView({behavior:"smooth"})}}>Send to Video Studio</button></div>)}</div>
+      <div className="adlist">{campaign.plan.ads.map((ad:any,i:number)=><div className="ad" key={i}><b>{ad.duration}s · {ad.format}</b><p>{ad.script}</p><div className="code">{ad.visualPrompt}</div><p className="muted">Caption: {ad.caption}</p><div className="row"><button className="btn" disabled={!apiKey||campaignVideos[i]?.status==="STARTING"||campaignVideos[i]?.status==="IN_QUEUE"||campaignVideos[i]?.status==="PROCESSING"} onClick={()=>generateCampaignVideo(ad,i)}>{campaignVideos[i]?.status==="COMPLETED"?"Regenerate Ad Video":campaignVideos[i]?.status?`Video: ${campaignVideos[i].status}`:"🎬 Generate Advertising Video"}</button><button className="btn secondary" onClick={()=>{setPrompt(ad.visualPrompt);setDuration(Math.min(8,ad.duration));setAspect(ad.format.includes("9:16")?"9:16":"16:9");document.getElementById("generate")?.scrollIntoView({behavior:"smooth"})}}>Open in Video Studio</button></div>{campaignVideos[i]?.status==="COMPLETED"&&campaignVideos[i]?.videoUrl&&<div className="adVideo"><p><b>Advertising video preview</b> · generated from this campaign</p><video src={campaignVideos[i].videoUrl} controls playsInline style={{width:"100%",borderRadius:12}}/><a className="btn" style={{display:"inline-block",marginTop:10,textDecoration:"none"}} href={campaignVideos[i].videoUrl} download={`campaign-ad-${i+1}.mp4`}>Download Ad MP4</a></div>}{campaignVideos[i]?.status==="ERROR"&&<div className="status">{campaignVideos[i].error}</div>}</div>)}</div>
     </div>}
    </div>
   </section>

@@ -2,3 +2,5 @@
 input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:inherit;margin:6px 0 14px}label{display:block;margin-top:10px;font-weight:600}.card video{display:block}
 
 .wide{grid-column:1/-1}.bottom{max-width:1120px;margin:0 auto}.result{margin-top:18px;background:#090a10;border:1px solid #292a36;border-radius:14px;padding:15px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#19152a;color:#bbaaff;font-size:11px}.result h3{margin:10px 0}.adlist,.scenegrid{display:grid;gap:12px;margin-top:14px}.ad,.scene{border:1px solid #292a36;border-radius:12px;padding:14px;background:#0c0d13}.ad p,.scene p{white-space:pre-wrap;color:#c9c9d3;line-height:1.5}.scene span{display:block;color:#8c8d9c;font-size:12px;margin-top:4px}.secondary{background:#24243a;margin-top:10px}.scenegrid{grid-template-columns:repeat(2,1fr)}@media(max-width:800px){.scenegrid{grid-template-columns:1fr}.wide{grid-column:auto}}
+
+.adVideo{margin-top:14px;padding-top:14px;border-top:1px solid #292a36}.adVideo p{margin:0 0 10px}
