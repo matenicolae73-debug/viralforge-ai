@@ -38,15 +38,9 @@ export async function findKey(raw:string){
  const credits=Number(await redis(["HGET",CREDITS,id])||0); return {...JSON.parse(meta),credits,active:true} as ApiKeyRecord
 }
 
-export function isOwnerEmail(email:string){
- const owner=String(process.env.OWNER_EMAIL||"").trim().toLowerCase()
- return !!owner && !!email && email.trim().toLowerCase()===owner
-}
-
 export async function consumeKey(raw:string,cost:number){
  requirePersistence(); const k=await findKey(raw); if(!k) return {ok:false,error:"Invalid or revoked API key."}
  if(cost<=0 || !Number.isFinite(cost)) return {ok:false,error:"Invalid credit cost."}
- if(isOwnerEmail(k.email)) return {ok:true,key:{...k,credits:k.credits},owner:true}
  const c=redisConfig();
  if(c.url&&c.token){
   const script=`local a=redis.call('HGET',KEYS[1],ARGV[1]); if redis.call('HGET',ARGV[2],ARGV[1]) ~= '1' then return -2 end; if not a then return -3 end; local n=tonumber(a); local cost=tonumber(ARGV[3]); if n<cost then return -1 end; return redis.call('HINCRBY',KEYS[1],ARGV[1],-cost)`
