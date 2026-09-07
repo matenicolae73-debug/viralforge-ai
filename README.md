@@ -89,3 +89,10 @@ ViralMovie uses resolution-aware credits to protect margins: 360p/540p = 1 credi
 4. Deploy after saving environment variables.
 5. Create a ViralMovie customer key; customers never receive the private provider key.
 6. Test a 5-second 360p or 540p generation before enabling higher resolutions.
+
+
+## New studios
+
+- **Campaign Studio**: creates a campaign brief, hooks, slogans, scripts, visual prompts and captions. It works with `GEMINI_API_KEY` when configured and falls back to a built-in generator without an AI-provider call.
+- **Film Studio**: accepts film projects from 1 to 10 minutes and splits them into 8-second production scenes for the current video engine. This is an orchestration/planning layer; the existing video provider still renders individual scenes.
+- **Video Studio**: renders individual scenes through the secured ViralMovie customer key and provider backend.
