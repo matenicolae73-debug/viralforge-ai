@@ -195,10 +195,13 @@ export async function POST(req: Request) {
           job.videoUrl || null,
 
         creditsRemaining:
-          debit.key?.credits ?? null,
+          debit.owner ? "unlimited" : (debit.key?.credits ?? null),
 
         creditsCharged:
-          creditCost,
+          debit.owner ? 0 : creditCost,
+
+        owner:
+          !!debit.owner,
 
         render: {
           durationSeconds:

@@ -96,3 +96,7 @@ ViralMovie uses resolution-aware credits to protect margins: 360p/540p = 1 credi
 - **Campaign Studio**: creates a campaign brief, hooks, slogans, scripts, visual prompts and captions. It works with `GEMINI_API_KEY` when configured and falls back to a built-in generator without an AI-provider call.
 - **Film Studio**: accepts film projects from 1 to 10 minutes and splits them into 8-second production scenes for the current video engine. This is an orchestration/planning layer; the existing video provider still renders individual scenes.
 - **Video Studio**: renders individual scenes through the secured ViralMovie customer key and provider backend.
+
+
+## Owner Mode
+Set `OWNER_EMAIL` only in Vercel Environment Variables. An API key created for that exact email is treated as the project owner for video generation and does not consume platform credits. The owner still needs a configured video provider; provider charges/free-tier limits are separate from platform credits. Never put the owner email or provider secrets in client-side code.
