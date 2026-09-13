@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up job
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -35,7 +35,7 @@ jobs:
         run: |
           set -e
 
-          echo "Caut fisiere ZIP in repository..."
+          echo "Caut fisierul ZIP..."
 
           ZIP_FILE="$(find . \
             -type f \
@@ -46,7 +46,7 @@ jobs:
           if [ -z "$ZIP_FILE" ]; then
             echo "ERROR: Niciun fisier ZIP nu a fost gasit."
             echo ""
-            echo "Fisierele din repository sunt:"
+            echo "Fisierele gasite in repository:"
             find . -maxdepth 3 -type f | sort
             exit 1
           fi
@@ -59,7 +59,7 @@ jobs:
         run: |
           set -e
 
-          echo "Fisier ZIP selectat:"
+          echo "ZIP selectat:"
           echo "$ZIP_FILE"
 
           echo ""
@@ -74,7 +74,7 @@ jobs:
           rm -rf extracted-viralmovie
           mkdir -p extracted-viralmovie
 
-          echo "Se dezarhiveaza ZIP-ul..."
+          echo "Se dezarhiveaza proiectul..."
 
           unzip -o "$ZIP_FILE" \
             -d extracted-viralmovie
@@ -90,14 +90,16 @@ jobs:
           echo "Se cauta package.json..."
 
           PROJECT_ROOT="$(find extracted-viralmovie \
+            -type f \
             -name package.json \
             -not -path '*/node_modules/*' \
             -printf '%h\n' \
             | head -n 1)"
 
           if [ -z "$PROJECT_ROOT" ]; then
-            echo "WARNING: package.json nu a fost gasit."
-            echo "Se foloseste folderul extras ca radacina."
+            echo "package.json nu a fost gasit."
+            echo "Se foloseste folderul principal extras."
+
             PROJECT_ROOT="extracted-viralmovie"
           fi
 
@@ -109,53 +111,49 @@ jobs:
         run: |
           set -e
 
-          echo "Primele fisiere extrase:"
+          echo "Fisierele proiectului:"
+
           find "$PROJECT_ROOT" \
             -maxdepth 3 \
             -type f \
             | sort \
-            | head -n 100
+            | head -n 150
 
-      - name: Install ViralMovie project
+      - name: Skip npm install during unpack
         shell: bash
         run: |
           set -e
 
-          if [ ! -f "$PROJECT_ROOT/package.json" ]; then
-            echo "Nu exista package.json."
-            echo "Se sare peste npm install."
-            exit 0
-          fi
+          echo "Se sare peste npm install."
+          echo "Acest workflow doar dezarhiveaza proiectul."
+          echo "Dependentele vor fi instalate ulterior pe Vercel sau local."
 
-          cd "$PROJECT_ROOT"
-
-          echo "Se instaleaza dependentele..."
-
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
-
-      - name: Check ViralMovie project
+      - name: Check project files
         shell: bash
         run: |
           set -e
 
-          if [ ! -f "$PROJECT_ROOT/package.json" ]; then
-            echo "Nu exista package.json."
-            exit 0
-          fi
+          echo "Verificare fisiere proiect..."
 
-          cd "$PROJECT_ROOT"
-
-          echo "Verificare proiect..."
-
-          if npm run | grep -q "lint"; then
-            npm run lint
+          if [ -f "$PROJECT_ROOT/package.json" ]; then
+            echo "package.json gasit."
           else
-            echo "Scriptul lint nu exista. Se continua."
+            echo "WARNING: package.json nu a fost gasit."
           fi
+
+          if [ -f "$PROJECT_ROOT/next.config.ts" ]; then
+            echo "next.config.ts gasit."
+          fi
+
+          if [ -d "$PROJECT_ROOT/app" ]; then
+            echo "Folderul app/ exista."
+          fi
+
+          if [ -d "$PROJECT_ROOT/pages" ]; then
+            echo "Folderul pages/ exista."
+          fi
+
+          echo "Verificarea s-a terminat."
 
       - name: Copy extracted project to repository root
         shell: bash
@@ -164,7 +162,7 @@ jobs:
 
           echo "Se copiaza proiectul in repository..."
 
-          shopt -s dotglob
+          shopt -s dotglob nullglob
 
           for item in "$PROJECT_ROOT"/*; do
             item_name="$(basename "$item")"
@@ -184,6 +182,12 @@ jobs:
               continue
             fi
 
+            if [ "$item_name" = "*.zip" ]; then
+              echo "Se ignora ZIP-ul."
+              continue
+            fi
+
+            echo "Copiez: $item_name"
             cp -R "$item" .
           done
 
@@ -198,17 +202,31 @@ jobs:
 
           echo "Folderul temporar a fost sters."
 
-      - name: Remove ZIP archive from repository
+      - name: Remove ZIP archive
         shell: bash
         run: |
           set -e
 
           if [ -n "$ZIP_FILE" ] && [ -f "$ZIP_FILE" ]; then
             rm -f "$ZIP_FILE"
-            echo "ZIP-ul a fost eliminat din repository dupa extragere."
+            echo "ZIP-ul a fost eliminat din repository."
           else
-            echo "ZIP-ul nu mai exista. Se continua."
+            echo "ZIP-ul nu mai exista."
           fi
+
+      - name: Show final project structure
+        shell: bash
+        run: |
+          set -e
+
+          echo "Structura finala:"
+
+          find . \
+            -maxdepth 3 \
+            -type f \
+            -not -path './.git/*' \
+            | sort \
+            | head -n 200
 
       - name: Commit and push changes
         shell: bash
@@ -221,7 +239,7 @@ jobs:
           git add -A
 
           if git diff --cached --quiet; then
-            echo "Nu exista modificari de salvat."
+            echo "Nu exista modificari noi."
             exit 0
           fi
 
