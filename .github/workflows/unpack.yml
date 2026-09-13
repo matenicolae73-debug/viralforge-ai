@@ -1,109 +1,216 @@
-name: ViralMovie AI - AUTO UNPACK
+name: Unpack ViralMovie ZIP
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - "ViralMovie-AI-AUTO-UNPACK.zip"
+      - "*.zip"
+      - "**/*.zip"
+      - ".github/workflows/unpack.yml"
 
 permissions:
   contents: write
 
 jobs:
   unpack:
+    name: Unpack ViralMovie project
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Set up job
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Find ViralMovie ZIP
-        id: zip
+      - name: Install unzip
         shell: bash
         run: |
           set -e
 
-          ZIP="$(find . -maxdepth 1 -type f -iname 'ViralMovie-AI-AUTO-UNPACK.zip' -print -quit)"
+          sudo apt-get update
+          sudo apt-get install -y unzip
 
-          if [ -z "$ZIP" ]; then
-            echo "ERROR: ViralMovie-AI-AUTO-UNPACK.zip not found."
-            echo "ZIP files found:"
-            find . -maxdepth 1 -type f -iname "*.zip" -print
+      - name: Find ViralMovie ZIP
+        shell: bash
+        run: |
+          set -e
+
+          echo "Caut fisiere ZIP in repository..."
+
+          ZIP_FILE="$(find . \
+            -type f \
+            -iname '*.zip' \
+            -not -path './.git/*' \
+            | head -n 1)"
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: Niciun fisier ZIP nu a fost gasit."
+            echo ""
+            echo "Fisierele din repository sunt:"
+            find . -maxdepth 3 -type f | sort
             exit 1
           fi
 
-          echo "Found ZIP: $ZIP"
-          echo "ZIP=$ZIP" >> "$GITHUB_OUTPUT"
+          echo "ZIP gasit: $ZIP_FILE"
+          echo "ZIP_FILE=$ZIP_FILE" >> "$GITHUB_ENV"
+
+      - name: Show ZIP information
+        shell: bash
+        run: |
+          set -e
+
+          echo "Fisier ZIP selectat:"
+          echo "$ZIP_FILE"
+
+          echo ""
+          echo "Continutul ZIP-ului:"
+          unzip -l "$ZIP_FILE"
 
       - name: Extract ViralMovie project
         shell: bash
         run: |
           set -e
 
-          ZIP="${{ steps.zip.outputs.ZIP }}"
+          rm -rf extracted-viralmovie
+          mkdir -p extracted-viralmovie
 
-          rm -rf .unpack-temp
-          mkdir -p .unpack-temp
+          echo "Se dezarhiveaza ZIP-ul..."
 
-          unzip -o "$ZIP" -d .unpack-temp
+          unzip -o "$ZIP_FILE" \
+            -d extracted-viralmovie
 
-          echo "Extracted files:"
-          find .unpack-temp -maxdepth 3 -type f | head -100
+          echo ""
+          echo "ZIP dezarhivat cu succes."
 
       - name: Find project root
-        id: project
         shell: bash
         run: |
           set -e
 
-          ROOT=".unpack-temp"
+          echo "Se cauta package.json..."
 
-          if [ -f "$ROOT/package.json" ]; then
-            echo "package.json found at ZIP root."
+          PROJECT_ROOT="$(find extracted-viralmovie \
+            -name package.json \
+            -not -path '*/node_modules/*' \
+            -printf '%h\n' \
+            | head -n 1)"
+
+          if [ -z "$PROJECT_ROOT" ]; then
+            echo "WARNING: package.json nu a fost gasit."
+            echo "Se foloseste folderul extras ca radacina."
+            PROJECT_ROOT="extracted-viralmovie"
+          fi
+
+          echo "Project root: $PROJECT_ROOT"
+          echo "PROJECT_ROOT=$PROJECT_ROOT" >> "$GITHUB_ENV"
+
+      - name: Display extracted files
+        shell: bash
+        run: |
+          set -e
+
+          echo "Primele fisiere extrase:"
+          find "$PROJECT_ROOT" \
+            -maxdepth 3 \
+            -type f \
+            | sort \
+            | head -n 100
+
+      - name: Install ViralMovie project
+        shell: bash
+        run: |
+          set -e
+
+          if [ ! -f "$PROJECT_ROOT/package.json" ]; then
+            echo "Nu exista package.json."
+            echo "Se sare peste npm install."
+            exit 0
+          fi
+
+          cd "$PROJECT_ROOT"
+
+          echo "Se instaleaza dependentele..."
+
+          if [ -f package-lock.json ]; then
+            npm ci
           else
-            PKG="$(find "$ROOT" -type f -name package.json -print -quit)"
+            npm install
+          fi
 
-            if [ -z "$PKG" ]; then
-              echo "ERROR: package.json not found."
-              exit 1
+      - name: Check ViralMovie project
+        shell: bash
+        run: |
+          set -e
+
+          if [ ! -f "$PROJECT_ROOT/package.json" ]; then
+            echo "Nu exista package.json."
+            exit 0
+          fi
+
+          cd "$PROJECT_ROOT"
+
+          echo "Verificare proiect..."
+
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "Scriptul lint nu exista. Se continua."
+          fi
+
+      - name: Copy extracted project to repository root
+        shell: bash
+        run: |
+          set -e
+
+          echo "Se copiaza proiectul in repository..."
+
+          shopt -s dotglob
+
+          for item in "$PROJECT_ROOT"/*; do
+            item_name="$(basename "$item")"
+
+            if [ "$item_name" = "node_modules" ]; then
+              echo "Se ignora node_modules."
+              continue
             fi
 
-            ROOT="$(dirname "$PKG")"
-          fi
+            if [ "$item_name" = ".next" ]; then
+              echo "Se ignora .next."
+              continue
+            fi
 
-          echo "Project root: $ROOT"
-          echo "ROOT=$ROOT" >> "$GITHUB_OUTPUT"
+            if [ "$item_name" = ".git" ]; then
+              echo "Se ignora .git."
+              continue
+            fi
 
-      - name: Install ViralMovie project at repository root
+            cp -R "$item" .
+          done
+
+          echo "Copiere finalizata."
+
+      - name: Remove temporary extraction folder
         shell: bash
         run: |
           set -e
 
-          ROOT="${{ steps.project.outputs.ROOT }}"
-          ZIP="${{ steps.zip.outputs.ZIP }}"
+          rm -rf extracted-viralmovie
 
-          find . -mindepth 1 -maxdepth 1 \
-            ! -name ".git" \
-            ! -name ".github" \
-            ! -name ".unpack-temp" \
-            ! -name "$(basename "$ZIP")" \
-            -exec rm -rf {} +
+          echo "Folderul temporar a fost sters."
 
-          rsync -a --exclude=".github/" "$ROOT"/ ./
+      - name: Remove ZIP archive from repository
+        shell: bash
+        run: |
+          set -e
 
-          rm -rf .unpack-temp
-          rm -f "$ZIP"
-
-          if [ ! -f package.json ]; then
-            echo "ERROR: package.json missing after unpack."
-            exit 1
+          if [ -n "$ZIP_FILE" ] && [ -f "$ZIP_FILE" ]; then
+            rm -f "$ZIP_FILE"
+            echo "ZIP-ul a fost eliminat din repository dupa extragere."
+          else
+            echo "ZIP-ul nu mai exista. Se continua."
           fi
 
-          echo "ViralMovie AI UNPACK OK"
-
-      - name: Commit and push
+      - name: Commit and push changes
         shell: bash
         run: |
           set -e
@@ -114,8 +221,10 @@ jobs:
           git add -A
 
           if git diff --cached --quiet; then
-            echo "Nothing to commit."
-          else
-            git commit -m "AUTO UNPACK ViralMovie AI"
-            git push
+            echo "Nu exista modificari de salvat."
+            exit 0
           fi
+
+          git commit -m "Unpack ViralMovie project"
+
+          git push
