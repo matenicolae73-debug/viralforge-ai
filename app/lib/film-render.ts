@@ -116,17 +116,19 @@ export async function renderFilm(
   const trailerData = await ff.readFile("trailer.mp4");
   const subData = await ff.readFile("subtitles.srt");
 
-  // FFmpeg WASM may return Uint8Array<ArrayBufferLike>. Create fresh
-  // ArrayBuffer-backed copies so TypeScript/Blob accept them on newer TS libs.
-  const toBlobPart = (data: Uint8Array) => {
+  // FFmpeg WASM returns FileData whose Uint8Array can be backed by
+  // ArrayBufferLike/SharedArrayBuffer. Newer TypeScript lib.dom definitions
+  // require BlobPart to use a real ArrayBuffer. Make an explicit copy and
+  // cast only the newly-owned buffer to ArrayBuffer.
+  const toArrayBuffer = (data: Uint8Array): ArrayBuffer => {
     const copy = new Uint8Array(data.byteLength);
     copy.set(data);
-    return copy.buffer;
+    return copy.buffer as ArrayBuffer;
   };
 
-  const movieBlob = new Blob([toBlobPart(movieData)], { type: "video/mp4" });
-  const trailerBlob = new Blob([toBlobPart(trailerData)], { type: "video/mp4" });
-  const subBlob = new Blob([toBlobPart(subData)], { type: "application/x-subrip" });
+  const movieBlob = new Blob([toArrayBuffer(movieData as Uint8Array)], { type: "video/mp4" });
+  const trailerBlob = new Blob([toArrayBuffer(trailerData as Uint8Array)], { type: "video/mp4" });
+  const subBlob = new Blob([toArrayBuffer(subData as Uint8Array)], { type: "application/x-subrip" });
 
   return {
     movieUrl: URL.createObjectURL(movieBlob),
